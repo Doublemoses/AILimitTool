@@ -10,7 +10,7 @@
         <TabControl x:Name="tabcontrolMain" TabStripPlacement="Left" SelectionChanged="tabcontrolMain_SelectionChanged" Height="380" VerticalAlignment="Top" >
             <TabItem x:Name="tabMain" Header="Main">
                 <Grid Background="White">
-                    <CheckBox x:Name="checkboxPlayerImmortal" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Checked="PlayerImmortal_Toggle" Unchecked="PlayerImmortal_Toggle" IsChecked="{Binding Path=playerImmortal, Mode=TwoWay}">
+                    <CheckBox x:Name="checkboxPlayerImmortal" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Checked="PlayerImmortal_Toggle" Unchecked="PlayerImmortal_Toggle">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Player Immortal"/>
                             <TextBlock x:Name="textPlayerImmortal_Hotkey" Text="" Foreground="Gray"/>
@@ -63,6 +63,15 @@
                     <CheckBox x:Name="checkboxTargetDefense" Content="Defense" HorizontalAlignment="Left" Margin="30,170,0,0" VerticalAlignment="Top" IsChecked="True"/>
                     <CheckBox x:Name="checkboxTargetState" Content="Current State" HorizontalAlignment="Left" Margin="30,150,0,0" VerticalAlignment="Top" IsChecked="True"/>
                     <CheckBox x:Name="checkboxTargetStatusResist" Content="Status Resist" HorizontalAlignment="Left" Margin="30,190,0,0" VerticalAlignment="Top" IsChecked="True"/>
+                    <ComboBox x:Name="comboboxBossRespawn" HorizontalAlignment="Left" Margin="10,210,0,0" VerticalAlignment="Top" Width="159" SelectedIndex="0">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Key}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Content="Respawn" HorizontalAlignment="Left" Margin="174,211,0,0" VerticalAlignment="Top" Width="98" Click="RespawnSelectedBoss"/>
+                    <Button Content="Respawn All" HorizontalAlignment="Left" Margin="174,236,0,0" VerticalAlignment="Top" Width="98" Click="RespawnAllBosses"/>
                 </Grid>
             </TabItem>
             <TabItem x:Name="tabStats" Header="Stats">

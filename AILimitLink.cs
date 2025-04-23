@@ -20,6 +20,10 @@ namespace AILimitTool
 
     static class Offsets
     {
+        // ViewManager
+        public const int currentUI = 0x50;
+        public const int currentUIID = 0x40;
+
         // ArchiveData offsets
         public const int playerLevel = 0x18;
         public const int transferDestination = 0x24;
@@ -108,7 +112,7 @@ namespace AILimitTool
         public bool loadingScreenActive = false;
 
         const ulong ADDRESS_MINIMUM = 0x10000000000;
-        const ulong ADDRESS_MAXIMUM = 0x2FFFFFFFFFF;
+        const ulong ADDRESS_MAXIMUM = 0x6FFFFFFFFFF;
 
         System.Windows.Threading.DispatcherTimer monitorTimer = new System.Windows.Threading.DispatcherTimer();
 
@@ -297,16 +301,11 @@ namespace AILimitTool
         IntPtr levelRootBase = 0;
         IntPtr transferDestination = 0;
         IntPtr timerAddress = 0;
+        IntPtr viewManagerBase = 0;
 
         public bool versionIdentificationFailure = false;
         public GameVersion version = GameVersion.vNotFound;
         public Dictionary<uint, bool> addressFound = new Dictionary<uint, bool>();
-
-        private Dictionary<string, (int, int)> bossResetStates = new Dictionary<string, (int, int)>()
-        {
-            { "Sewer",      (31,    32) },
-            { "Lore",       (1,     173) },
-        };
 
         public enum GameVersion
         {
@@ -370,10 +369,10 @@ namespace AILimitTool
             {
                 archiveDataBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x042DDBC0, 0xB8, 0x0) + 0x18;
                 playerBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x042E94A0, 0xB8) + 0xB40;
-                loadingViewBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x043474C0, 0xB8, 0x8, 0xD0, 0x48, 0x18, 0x48);
+                loadingViewBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x042E13C0, 0xB8, 0x0, 0x48, 0x78, 0x48);
                 levelRootBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x04345600, 0xB8, 0x10) + 0x38;
                 transferDestination = ResolvePointerChain(gameAssemblyBaseAddress + 0x04314268, 0xB8) + 0x1C;
-                
+                //viewManagerBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x04377100, 0xB8, 0x0); // Not used yet.
             }
             else
             {
@@ -381,9 +380,6 @@ namespace AILimitTool
             }
 
             timerAddress = ResolvePointerChain(unityPlayerBaseAddress + 0x01CA3978) + 0x60;
-
-            //MessageBox.Show(version.ToString());
-            //MessageBox.Show(archiveDataBase.ToString("X12") + " " + playerBase.ToString("X12") + " " + loadingViewBase.ToString("X12") + " " + levelRootBase.ToString("X12") + " " + transferDestination.ToString("X12"));
 
             return archiveDataBase > 0x100000
                    && playerBase > 0x100000
@@ -947,34 +943,6 @@ namespace AILimitTool
             MonsterState,
         }
 
-        /*public int SetState(uint state, StateTypes stateType, int newValue = -1, int levelID =-1)
-        {
-            int offset = 0x10;
-
-            if (stateType == StateTypes.MonsterState)
-                offset = 0x18;
-
-            IntPtr statesBase = ResolvePointerChain(archiveDataBase, 0x38, offset, 0x10) + 0x20;
-            uint statesSize = ReadUInt32(ResolvePointerChain(archiveDataBase, 0x38, offset) + 0x18);
-
-            if (statesSize > 2000) // safety
-                statesSize = 2000;
-
-            for (int i = 0; i < statesSize; i++)
-            {
-                //MessageBox.Show("" + state + " " + (ReadUInt64(statesBase + (i * 8)) + 0x10).ToString("X") + " " + ReadUInt32((IntPtr)ReadUInt64(statesBase + (i * 8)) + 0x10));
-                if (ReadUInt32((IntPtr)ReadUInt64(statesBase + (i * 8)) + 0x10) == state)
-                {
-
-                    if (newValue > -1)
-                        WriteUInt32((IntPtr)ReadUInt64(statesBase + (i * 8)) + 0x14, (uint)newValue);
-
-                    return (int)ReadUInt32((IntPtr)ReadUInt64(statesBase + (i * 8)) + 0x14);
-                }
-            }
-            return -1;
-        }*/
-
         public int SetState(uint state, StateTypes stateType, int newValue = -1, int levelID = -1)
         {
             int offset = 0x10;
@@ -1048,6 +1016,66 @@ namespace AILimitTool
             }
             oldStatesListSize[index] = statesSize;
             return returnData;
+        }
+
+        public enum Boss
+        {
+            SewerCleaner,
+            Lore,
+            Patriarch,
+            Necro,
+            Pardoner,
+            CleansingKnight,
+            Saint,
+            Choirmaster,
+            Hunter,
+            Persephone,
+            Colossaint,
+            Eunomia,
+            Absolver,
+            BossRush,
+            Loskid,
+            Aether,
+        }
+
+        // States needed to respawn boss.
+        private Dictionary<Boss, List<(StateTypes, int, uint)>> bossRespawnStates = new Dictionary<Boss, List<(StateTypes, int, uint)>> ()
+        {
+            { Boss.SewerCleaner,    new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10101, 31),
+                                                                                (StateTypes.MonsterState, 10101, 32)    }},
+            { Boss.Lore,            new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10101, 1),
+                                                                                (StateTypes.MonsterState, 10101, 173)   }},
+            { Boss.Patriarch,       new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10201, 1)     }},
+            { Boss.Necro,           new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10201, 3)     }},
+            { Boss.Pardoner,        new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10301, 639)   }},
+            { Boss.CleansingKnight, new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10302, 226)   }},
+            { Boss.Saint,           new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10401, 2)     }},
+            { Boss.Choirmaster,     new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10501, 1)     }},
+            { Boss.Hunter,          new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10601, 50)    }},
+            { Boss.Persephone,      new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10701, 1),
+                                                                                (StateTypes.MonsterState, 10701, 2)     }},
+            { Boss.Colossaint,      new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10401, 1)     }},
+            { Boss.Eunomia,         new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10401, 116),
+                                                                                (StateTypes.MonsterState, 10401, 117),
+                                                                                (StateTypes.MonsterState, 10401, 215),
+                                                                                (StateTypes.GameState,    0,  360010),
+                                                                                (StateTypes.GameState,    0,  360022)   }},
+            { Boss.Absolver,        new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10502, 231)   }},
+            { Boss.Loskid,          new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10504, 1),
+                                                                                (StateTypes.MonsterState, 10504, 2)     }},
+        };
+
+        public void RespawnBoss(Boss boss)
+        {
+            List<(StateTypes, int, uint)> states;
+
+            bossRespawnStates.TryGetValue(boss, out states);
+
+            foreach((StateTypes stateType, int level, uint state) entry in states)
+            {
+                SetState(entry.state, entry.stateType, 0, entry.level);
+            }
+
         }
     }
 }

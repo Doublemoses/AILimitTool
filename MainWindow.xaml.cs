@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -445,6 +446,8 @@ public partial class MainWindow : Window, IDisposable
         hotkeyManager = new HotkeyManager(this);
         UpdateUIHotkeyText();
 
+        comboboxBossRespawn.ItemsSource = bossList;
+
         uiTimer.Tick += uiTimer_Tick;
         uiTimer.Interval = TimeSpan.FromMilliseconds(100);
         uiTimer.Start();
@@ -547,6 +550,54 @@ public partial class MainWindow : Window, IDisposable
             targetDisplay.Hide();
     }
 
+
+
+    // Dictionary for binding
+    private Dictionary<string, Boss> bossList = new Dictionary<string, Boss>()
+    {
+        { "Sewer Cleaner",          Boss.SewerCleaner },
+        { "Lore",                   Boss.Lore },
+        { "Scavenger Patriarch",    Boss.Patriarch },
+        { "Necro",                  Boss.Necro },
+        { "Three-Faced Pardoner",   Boss.Pardoner },
+        { "Cleansing Knight",       Boss.CleansingKnight },
+        { "Saint",                  Boss.Saint },
+        { "Choirmaster",            Boss.Choirmaster },
+        { "Hunter of Bladers",      Boss.Hunter },
+        { "Persephone",             Boss.Persephone },
+        { "Colossaint",             Boss.Colossaint },
+        { "Eunomia",                Boss.Eunomia },
+        { "Absolver",               Boss.Absolver },
+        //{ "Boss Rush",              Boss.BossRush }, // Currently does not work
+        { "Loskid",                 Boss.Loskid },
+        //{ "Aether",                 Boss.Aether }, // Currently does not work
+    };
+
+    private void RespawnSelectedBoss(object sender, RoutedEventArgs e)
+    {
+        MessageBox.Show("This option should be performed on the AI Limit main menu. I can't detect whether you're on the main menu yet, but that will happen next patch.");
+
+        KeyValuePair<string, Boss> selected = (KeyValuePair<string, Boss>)comboboxBossRespawn.SelectedItem;
+
+        RespawnBoss(selected.Value);
+    }
+
+    private void RespawnAllBosses(object sender, RoutedEventArgs e)
+    {
+        MessageBox.Show("This option should be performed on the AI Limit main menu. I can't detect whether you're on the main menu yet, but that will happen next patch.");
+
+        foreach (KeyValuePair<string, Boss> entry in bossList)
+        {
+            RespawnBoss(entry.Value);
+        }
+    }
+
+    private void RespawnBoss(Boss boss)
+    {
+        AILimit.RespawnBoss(boss);
+    }
+
+
     //
     // TELEPORT TAB
     //
@@ -593,6 +644,8 @@ public partial class MainWindow : Window, IDisposable
         TeleportDestination destination = new TeleportDestination();
 
         (double x, double y, double z) position = AILimit.GetPlayerPosition();
+
+        Debug.Print(position.ToString());
 
         destination.Description = description;
         destination.x = position.x;
@@ -730,21 +783,47 @@ public partial class MainWindow : Window, IDisposable
 
     private void LoadTeleportDestinations()
     {
+        //string resource = Assembly.GetExecutingAssembly().GetManifestResourceNames().Single(str => str.EndsWith("teleports.tsv"));
+
+        LoadTeleportDestinations(true);
+
+        string file = System.AppDomain.CurrentDomain.BaseDirectory + "teleports.dat";
+        if (File.Exists(file))
+            LoadTeleportDestinations(false, file);
+    }
+
+    private void LoadTeleportDestinations(bool useDefault, string sourceFile = "")
+    {
         try
         {
             string line = "";
             int level = 0;
 
- 
-            using (StreamReader sr = new StreamReader("D:\\teleports2.txt"))
+            Stream sourceStream;
+
+            if (useDefault)
+            {
+                sourceFile = Assembly.GetExecutingAssembly().GetManifestResourceNames().Single(str => str.EndsWith("teleports.tsv"));
+                sourceStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(sourceFile);
+            }
+            else
+            {
+                sourceStream = File.OpenRead(sourceFile);
+            }
+
+
+            using (StreamReader sr = new StreamReader(sourceStream))
             {
                 while ((line = sr.ReadLine()) != null)
                 {
-
-
+                    Debug.Print(line);
                     if (line[0] == '!')
                     {
                         level = Convert.ToInt32(line.Substring(1));
+                    }
+                    else if (line[0] == '&')
+                    {
+                        // Do nothing. Potential future use.
                     }
                     else
                     {
@@ -767,7 +846,9 @@ public partial class MainWindow : Window, IDisposable
             }
         }
         catch (Exception e)
-        {  }
+        {
+            Debug.Print("Error: " + e.ToString());
+        }
 
         listboxTeleportDestinations.ItemsSource = teleportDestinations;
 
@@ -776,20 +857,31 @@ public partial class MainWindow : Window, IDisposable
 
     private void SaveTeleportDestinations()
     {
-        using (StreamWriter sw = new StreamWriter("D:\\teleports2.txt"))
+        string file = System.AppDomain.CurrentDomain.BaseDirectory + "teleports.dat";
+        try
         {
-            List<TeleportDestination> sortedList = teleportDestinations.OrderBy(o => o.Level).ToList();
-            int level = 0;
-
-            foreach (TeleportDestination destination in sortedList)
+            using (StreamWriter sw = new StreamWriter(file))
             {
-                if (level != destination.Level)
+                List<TeleportDestination> sortedList = teleportDestinations.OrderBy(o => o.Level).ToList();
+                int level = 0;
+
+                foreach (TeleportDestination destination in sortedList)
                 {
-                    level = destination.Level;
-                    sw.WriteLine("!" + destination.Level);
+                    if (!destination.IsDefault)
+                    {
+                        if (level != destination.Level)
+                        {
+                            level = destination.Level;
+                            sw.WriteLine("!" + destination.Level);
+                        }
+                        sw.WriteLine(destination.Description + "\t" + destination.x + "\t" + destination.y + "\t" + destination.z + "\t" + "0");
+                    }
                 }
-                sw.WriteLine(destination.Description + "\t" + destination.x + "\t" + destination.y + "\t" + destination.z + "\t" + ((destination.IsDefault == true) ? "1" : "0"));
             }
+        }
+        catch (Exception e)
+        {
+            MessageBox.Show("Problem saving teleports file to " + file);
         }
     }
 
