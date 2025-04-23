@@ -1,0 +1,183 @@
+﻿<Window x:Class="AILimitTool.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AILimitTool"
+        mc:Ignorable="d"
+        Title="AI Limit Tool" Height="432" Width="386" ResizeMode="CanMinimize">
+    <Grid>
+        <TabControl x:Name="tabcontrolMain" TabStripPlacement="Left" SelectionChanged="tabcontrolMain_SelectionChanged" Height="380" VerticalAlignment="Top" >
+            <TabItem x:Name="tabMain" Header="Main">
+                <Grid Background="White">
+                    <CheckBox x:Name="checkboxPlayerImmortal" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Checked="PlayerImmortal_Toggle" Unchecked="PlayerImmortal_Toggle" IsChecked="{Binding Path=playerImmortal, Mode=TwoWay}">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Player Immortal"/>
+                            <TextBlock x:Name="textPlayerImmortal_Hotkey" Text="" Foreground="Gray"/>
+                        </StackPanel>
+                    </CheckBox>
+
+                    <CheckBox x:Name="checkboxLockTargetHP" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" Checked="LockTargetHP_Toggle" Unchecked="LockTargetHP_Toggle">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Lock Target HP%"/>
+                            <TextBlock x:Name="textLockTargetHP_Hotkey" Text="" Foreground="Gray"/>
+                        </StackPanel>
+                    </CheckBox>
+                    <TextBox x:Name="textboxLockTargetHP" HorizontalAlignment="Left" Margin="226,29,0,0" TextWrapping="Wrap" Text="50" VerticalAlignment="Top" Width="46" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" LostFocus="TextBox_VerifyPercent"/>
+
+                    <CheckBox x:Name="checkboxLockSync" HorizontalAlignment="Left" Margin="10,50,0,0" VerticalAlignment="Top" Checked="LockSync_Toggle" Unchecked="LockSync_Toggle">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Lock Sync"/>
+                            <TextBlock x:Name="textLockSync_Hotkey" Foreground="Gray"/>
+                        </StackPanel>
+                    </CheckBox>
+
+                    <CheckBox x:Name="checkboxInfiniteDew" HorizontalAlignment="Left" Margin="10,70,0,0" VerticalAlignment="Top" Checked="InfiniteDew_Toggle" Unchecked="InfiniteDew_Toggle">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Infinite healing dew"/>
+                            <TextBlock x:Name="textInfiniteDew_Hotkey" Foreground="Gray"/>
+                        </StackPanel>
+                    </CheckBox>
+
+                    <CheckBox x:Name="checkboxPlayerSpeed" HorizontalAlignment="Left" Margin="10,90,0,0" VerticalAlignment="Top" Checked="MovementSpeed_Toggle" Unchecked="MovementSpeed_Toggle">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Movement speed"/>
+                            <TextBlock x:Name="textPlayerSpeed_Hotkey" Foreground="Gray"/>
+                        </StackPanel>
+                    </CheckBox>
+                    <TextBox x:Name="textboxMovementSpeed" HorizontalAlignment="Left" Margin="226,89,0,0" TextWrapping="Wrap" Text="50" VerticalAlignment="Top" Width="46" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" TextChanged="textboxLockTargetHP_Copy_TextChanged"/>
+
+                    <CheckBox x:Name="checkboxFreeUpgrades" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Checked="FreeWeaponUpgrades_Toggle" Unchecked="FreeWeaponUpgrades_Toggle">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Free main weapon upgrades"/>
+                            <TextBlock x:Name="textFreeUpgrades_Hotkey" Foreground="Gray"/>
+                        </StackPanel>
+                    </CheckBox>
+
+                    <CheckBox x:Name="checkboxTargetInfo" HorizontalAlignment="Left" Margin="10,130,0,0" VerticalAlignment="Top" Checked="ShowTargetInfo_Toggle" Unchecked="ShowTargetInfo_Toggle">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Show Target Info box"/>
+                            <TextBlock x:Name="textTargetInfo_Hotkey" Foreground="Gray"/>
+                        </StackPanel>
+                    </CheckBox>
+                    <CheckBox x:Name="checkboxTargetDefense" Content="Defense" HorizontalAlignment="Left" Margin="30,170,0,0" VerticalAlignment="Top" IsChecked="True"/>
+                    <CheckBox x:Name="checkboxTargetState" Content="Current State" HorizontalAlignment="Left" Margin="30,150,0,0" VerticalAlignment="Top" IsChecked="True"/>
+                    <CheckBox x:Name="checkboxTargetStatusResist" Content="Status Resist" HorizontalAlignment="Left" Margin="30,190,0,0" VerticalAlignment="Top" IsChecked="True"/>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="tabStats" Header="Stats">
+                <Grid Background="#FFFFFFFF">
+                    <TextBlock HorizontalAlignment="Left" Margin="10,50,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Life"/></TextBlock>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,90,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Strength"/></TextBlock>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,69,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Vitality"/></TextBlock>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,113,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Technique"/></TextBlock>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Level"/></TextBlock>
+                    <TextBox x:Name="textboxPlayerLevel" HorizontalAlignment="Left" Margin="91,12,0,0" TextWrapping="Wrap" Text="1" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" LostFocus="TextBox_VerifyStatRange"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,134,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Spirit"/></TextBlock>
+                    <TextBox x:Name="textboxLife" HorizontalAlignment="Left" Margin="90,50,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange"/>
+                    <TextBox x:Name="textboxVitality" HorizontalAlignment="Left" Margin="90,71,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange"/>
+                    <TextBox x:Name="textboxStrength" HorizontalAlignment="Left" Margin="90,91,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange"/>
+                    <TextBox x:Name="textboxTechnique" HorizontalAlignment="Left" Margin="90,113,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange"/>
+                    <TextBox x:Name="textboxSpirit" HorizontalAlignment="Left" Margin="90,134,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange"/>
+                    <Button x:Name="buttonSetStats" Content="Set Stats" HorizontalAlignment="Left" Margin="165,11,0,0" VerticalAlignment="Top" Width="120" Click="SetPlayerStats"/>
+                    <CheckBox x:Name="checkboxCalculatePlayerLevel" Content="Calculate correct level" HorizontalAlignment="Left" Margin="10,31,0,0" VerticalAlignment="Top" IsChecked="True"/>
+                    <TextBox x:Name="textboxCrystals" HorizontalAlignment="Left" Margin="11,157,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="120" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric"/>
+                    <Button Content="Set Crystals" HorizontalAlignment="Left" Margin="165,156,0,0" VerticalAlignment="Top" Width="120" Click="SetCrystals"/>
+                    <Button HorizontalAlignment="Left" Margin="165,181,0,0" VerticalAlignment="Top" Width="120" Click="AddCrystals">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Add Crystals"/>
+                            <TextBlock x:Name="textAddCrystals_Hotkey" Foreground="Gray"/>
+                        </StackPanel>
+                    </Button>
+                    <TextBox x:Name="textboxAddCrystals" HorizontalAlignment="Left" Margin="11,182,0,0" TextWrapping="Wrap" Text="10000" VerticalAlignment="Top" Width="120" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric"/>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="tabTeleport" Header="Teleport">
+                <Grid Background="#FFFFFFFF">
+                    <Button HorizontalAlignment="Left" Margin="168,10,0,0" VerticalAlignment="Top" Width="145" Click="QuicksavePlayerPosition">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Quicksave"/>
+                            <TextBlock x:Name="textQuicksave_Hotkey" Foreground="Gray"/>
+                        </StackPanel>
+                    </Button>
+                    <Button HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="145" Click="QuickloadPlayerPosition">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Quickload"/>
+                            <TextBlock x:Name="textQuickload_Hotkey" Foreground="Gray"/>
+                        </StackPanel>
+                    </Button>
+                    <ListBox x:Name="listboxTeleportDestinations" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="10,77,10,0" VerticalAlignment="Top" Height="195">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DisplayName}" />
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <TextBlock x:Name="textCurrentMap" HorizontalAlignment="Left" Margin="10,56,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Current map:"/></TextBlock>
+                    <TextBlock x:Name="textSavedPosition" HorizontalAlignment="Left" Margin="10,35,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Saved"/><Run Text=" position"/><Run Text=":"/><Run Text=" "/><Run Text="0, 0, 0"/></TextBlock>
+                    <Button Content="Save Position" HorizontalAlignment="Left" Margin="10,277,0,0" VerticalAlignment="Top" Width="80"  Click="SavePlayerPosition"/>
+                    <Button Content="Load Position" HorizontalAlignment="Left" Margin="180,277,0,0" VerticalAlignment="Top" Width="80" Click="LoadPlayerPosition"/>
+                    <Button Content="Remove" HorizontalAlignment="Left" Margin="95,277,0,0" VerticalAlignment="Top" Width="80"  Click="RemovePlayerPositionEntry"/>
+
+                    <ComboBox x:Name="comboDestinations" HorizontalAlignment="Center" Margin="0,307,0,0" VerticalAlignment="Top" Width="303">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Key}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Content="Set Destination" HorizontalAlignment="Right" Margin="0,334,10,0" VerticalAlignment="Top" RenderTransformOrigin="1.805,0.146" Width="133" Click="SetWarpPoint"/>
+
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="tabStates" Header="States">
+                <Grid Background="#FFFFFFFF">
+                    <TextBox x:Name="textboxStateID" HorizontalAlignment="Left" Margin="159,12,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="49" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="TextBox_UpdateStateDisplay"/>
+                    <TextBox x:Name="textboxStateValue" HorizontalAlignment="Left" Margin="159,39,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="49" PreviewTextInput="TextBox_VerifyNumeric"/>
+                    <Button Content="Set State" HorizontalAlignment="Left" Margin="221,11,0,0" VerticalAlignment="Top" Width="74" Click="SetState"/>
+                    <TextBox x:Name="textboxStateLog" HorizontalAlignment="Left" TextWrapping="Wrap" VerticalAlignment="Top" Width="285" Height="240" VerticalScrollBarVisibility="Auto" IsReadOnly="True" Margin="10,111,0,0"/>
+                    <CheckBox x:Name="checkboxStateMonitor" Content="Monitor game state changes" HorizontalAlignment="Left" Margin="12,70,0,0" VerticalAlignment="Top"/>
+                    <Button Content="Clear" HorizontalAlignment="Left" Margin="221,86,0,0" VerticalAlignment="Top" Width="74" Click="ClearStateMonitor"/>
+                    <CheckBox x:Name="checkboxMonsterStateMonitor" Content="Monitor monster state changes" HorizontalAlignment="Left" Margin="12,90,0,0" VerticalAlignment="Top"/>
+                    <ComboBox x:Name="comboboxStateType" HorizontalAlignment="Left" Margin="45,10,0,0" VerticalAlignment="Top" Width="65" SelectedIndex="0" Foreground="Black" PreviewTextInput="TextBox_VerifyNumeric">
+                        <ComboBoxItem Content="Game"/>
+                        <ComboBoxItem Content="Monster"/>
+                    </ComboBox>
+                    <ComboBox x:Name="comboboxStateLevel" HorizontalAlignment="Left" Margin="45,37,0,0" VerticalAlignment="Top" Width="65" SelectedIndex="0" IsEditable="True">
+                        <ComboBoxItem Content="10101"/>
+                        <ComboBoxItem Content="10201"/>
+                        <ComboBoxItem Content="10301"/>
+                        <ComboBoxItem Content="10302"/>
+                        <ComboBoxItem Content="10401"/>
+                        <ComboBoxItem Content="10501"/>
+                        <ComboBoxItem Content="10502"/>
+                        <ComboBoxItem Content="10504"/>
+                        <ComboBoxItem Content="10601"/>
+                        <ComboBoxItem Content="10701"/>
+                        <ComboBoxItem Content="10504"/>
+                        <ComboBoxItem Content="10902"/>
+                    </ComboBox>
+                    <TextBlock HorizontalAlignment="Left" Margin="125,13,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="ID"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="125,39,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Value"/></TextBlock>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,13,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="Type"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Level"/></TextBlock>
+                    <Separator HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Height="10" Width="285"/>
+                </Grid>
+            </TabItem>
+
+            <TabItem x:Name="tabError" Header="Error">
+                <Grid Background="#FFFFFFFF">
+                    <TextBlock x:Name="textError" HorizontalAlignment="Center" Margin="0,29,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Text="Something went wrong"/><Run Language="en-au" Text=". Attempting to find AI Limit process."/></TextBlock>
+
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <StatusBar Background="#FFE8E8E8" Height="23" VerticalAlignment="Bottom">
+            <StatusBarItem Margin="3,0,0,0" VerticalContentAlignment="Bottom">
+                <TextBlock Name="textLastCommand" />
+            </StatusBarItem>
+        </StatusBar>
+
+    </Grid>
+</Window>

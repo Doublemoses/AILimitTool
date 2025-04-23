@@ -1,0 +1,38 @@
+﻿<Window x:Class="AILimitTool.TargetDisplay"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AILimitTool"
+        mc:Ignorable="d"
+        Title="Target Display" Height="441" Width="220" ResizeMode="NoResize" Topmost="True">
+    <Grid HorizontalAlignment="Center" Width="220">
+        <Label Content="HP" HorizontalAlignment="Left" Margin="6,-2,0,0" VerticalAlignment="Top" FontWeight="Bold" Height="26" Width="26" RenderTransformOrigin="0.986,0.411"/>
+        <ProgressBar x:Name="barHP" HorizontalAlignment="Center" Height="5" Margin="0,19,0,0" VerticalAlignment="Top" Width="200" Background="#FF656565" Foreground="#FF920000" Value="100"/>
+        <TextBlock x:Name="textHP" HorizontalAlignment="Left" Margin="60,3,0,0" TextWrapping="Wrap" VerticalAlignment="Top" TextAlignment="Right" Width="150"><Run Language="en-au" Text="1/1"/></TextBlock>
+
+        <TextBlock HorizontalAlignment="Left" Margin="10,29,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontWeight="Bold"><Run Language="en-au" Text="Tenacity"/></TextBlock>
+        <ProgressBar x:Name="barTenacity" HorizontalAlignment="Center" Height="5" Margin="0,45,0,0" VerticalAlignment="Top" Width="200" Background="#FF656565" Foreground="#FFEFDC08" Value="100"/>
+        <TextBlock x:Name="textTenacity" HorizontalAlignment="Left" Margin="60,29,0,0" TextWrapping="Wrap" VerticalAlignment="Top" TextAlignment="Right" Width="150" Text="1"/>
+
+        <TextBlock HorizontalAlignment="Left" Margin="10,55,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontWeight="Bold"><Run Language="en-au" Text="Sync"/></TextBlock>
+        <ProgressBar x:Name="barSync" HorizontalAlignment="Center" Height="5" Margin="0,71,0,0" VerticalAlignment="Top" Width="200" Background="#FF656565" Foreground="#FF43ABD6" Value="100"/>
+        <TextBlock x:Name="textSync" HorizontalAlignment="Left" Margin="60,55,0,0" TextWrapping="Wrap" VerticalAlignment="Top" TextAlignment="Right" Width="150"><Run Language="en-au" Text="100%"/></TextBlock>
+
+        <TextBlock HorizontalAlignment="Left" Margin="10,81,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontWeight="Bold"><Run Language="en-au" Text="Poison"/></TextBlock>
+        <ProgressBar x:Name="barPoison" HorizontalAlignment="Center" Height="5" Margin="0,97,0,0" VerticalAlignment="Top" Width="200" Background="#FF656565" Foreground="#FF48C704" Value="0"/>
+        <TextBlock x:Name="textPoison" HorizontalAlignment="Left" Margin="60,81,0,0" TextWrapping="Wrap" VerticalAlignment="Top" TextAlignment="Right" Width="150"><Run Language="en-au" Text="0%"/></TextBlock>
+
+        <TextBlock HorizontalAlignment="Left" Margin="10,107,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontWeight="Bold" RenderTransformOrigin="0.418,-0.507"><Run Language="en-au" Text="Piercing"/></TextBlock>
+        <ProgressBar x:Name="barPiercing" HorizontalAlignment="Center" Height="5" VerticalAlignment="Top" Width="200" Background="#FF656565" Foreground="#FF9C0000" Value="0" Margin="0,122,0,0"/>
+        <TextBlock x:Name="textPiercing" HorizontalAlignment="Left" Margin="60,107,0,0" TextWrapping="Wrap" VerticalAlignment="Top" TextAlignment="Right" Width="150"><Run Language="en-au" Text="0%"/></TextBlock>
+
+        <ProgressBar x:Name="barInfection" HorizontalAlignment="Center" Height="5" VerticalAlignment="Top" Width="200" Background="#FF656565" Foreground="#FFC7046F" Value="0" Margin="0,149,0,0"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,133,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontWeight="Bold"><Run Language="en-au" Text="Infection"/></TextBlock>
+        <TextBlock x:Name="textInfection" HorizontalAlignment="Left" Margin="60,133,0,0" TextWrapping="Wrap" VerticalAlignment="Top" TextAlignment="Right" Width="150"><Run Text="0"/><Run Language="en-au" Text=".0"/><Run Text="%"/></TextBlock>
+
+        <TextBlock x:Name="textHeaders" HorizontalAlignment="Left" Margin="11,159,0,0" TextWrapping="Wrap" VerticalAlignment="Top" FontWeight="Bold"><Run Language="en-au" Text="Headers:"/></TextBlock>
+        <TextBlock x:Name="textValues" HorizontalAlignment="Right" Margin="0,159,10,0" TextWrapping="Wrap" VerticalAlignment="Top" TextAlignment="Right"><Run Language="en-au" Text="Value"/></TextBlock>
+
+    </Grid>
+</Window>

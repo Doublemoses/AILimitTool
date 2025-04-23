@@ -1,0 +1,9 @@
+﻿Immortal	0x50
+LockTargetHP	0x4F
+LockSync	0x49
+PlayerSpeed	0x4C
+TargetInfo	0x42	2
+TeleportQucksave	0x4D	4
+TeleportQuickload	0x4D
+AddCrystals	0x4B
+NextTab	0xDD
