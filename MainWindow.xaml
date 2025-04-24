@@ -10,7 +10,7 @@
         <TabControl x:Name="tabcontrolMain" TabStripPlacement="Left" SelectionChanged="tabcontrolMain_SelectionChanged" Height="380" VerticalAlignment="Top" >
             <TabItem x:Name="tabMain" Header="Main">
                 <Grid Background="White">
-                    <CheckBox x:Name="checkboxPlayerImmortal" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Checked="PlayerImmortal_Toggle" Unchecked="PlayerImmortal_Toggle">
+                    <CheckBox x:Name="checkboxPlayerImmortal" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Checked="PlayerImmortal_Toggle" Unchecked="PlayerImmortal_Toggle" IsChecked="False">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Player Immortal"/>
                             <TextBlock x:Name="textPlayerImmortal_Hotkey" Text="" Foreground="Gray"/>
@@ -49,7 +49,7 @@
 
                     <CheckBox x:Name="checkboxFreeUpgrades" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Checked="FreeWeaponUpgrades_Toggle" Unchecked="FreeWeaponUpgrades_Toggle">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Free main weapon upgrades"/>
+                            <TextBlock><Run Text="Free main"/><Run Language="en-au" Text="hand"/><Run Text=" weapon upgrades"/></TextBlock>
                             <TextBlock x:Name="textFreeUpgrades_Hotkey" Foreground="Gray"/>
                         </StackPanel>
                     </CheckBox>
@@ -60,9 +60,9 @@
                             <TextBlock x:Name="textTargetInfo_Hotkey" Foreground="Gray"/>
                         </StackPanel>
                     </CheckBox>
-                    <CheckBox x:Name="checkboxTargetDefense" Content="Defense" HorizontalAlignment="Left" Margin="30,170,0,0" VerticalAlignment="Top" IsChecked="True"/>
-                    <CheckBox x:Name="checkboxTargetState" Content="Current State" HorizontalAlignment="Left" Margin="30,150,0,0" VerticalAlignment="Top" IsChecked="True"/>
-                    <CheckBox x:Name="checkboxTargetStatusResist" Content="Status Resist" HorizontalAlignment="Left" Margin="30,190,0,0" VerticalAlignment="Top" IsChecked="True"/>
+                    <CheckBox x:Name="checkboxTargetDefense" Content="Defense" HorizontalAlignment="Left" Margin="30,170,0,0" VerticalAlignment="Top" IsChecked="False" Checked="TargetDisplayOptionClicked" Unchecked="TargetDisplayOptionClicked"/>
+                    <CheckBox x:Name="checkboxTargetState" Content="Current State" HorizontalAlignment="Left" Margin="30,150,0,0" VerticalAlignment="Top" IsChecked="False" Checked="TargetDisplayOptionClicked" Unchecked="TargetDisplayOptionClicked"/>
+                    <CheckBox x:Name="checkboxTargetStatusResist" Content="Status Resist" HorizontalAlignment="Left" Margin="30,190,0,0" VerticalAlignment="Top" IsChecked="False" Checked="TargetDisplayOptionClicked" Unchecked="TargetDisplayOptionClicked"/>
                     <ComboBox x:Name="comboboxBossRespawn" HorizontalAlignment="Left" Margin="10,210,0,0" VerticalAlignment="Top" Width="159" SelectedIndex="0">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -81,7 +81,7 @@
                     <TextBlock HorizontalAlignment="Left" Margin="10,69,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Vitality"/></TextBlock>
                     <TextBlock HorizontalAlignment="Left" Margin="10,113,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Technique"/></TextBlock>
                     <TextBlock HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Level"/></TextBlock>
-                    <TextBox x:Name="textboxPlayerLevel" HorizontalAlignment="Left" Margin="91,12,0,0" TextWrapping="Wrap" Text="1" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" LostFocus="TextBox_VerifyStatRange"/>
+                    <TextBox x:Name="textboxPlayerLevel" HorizontalAlignment="Left" Margin="91,12,0,0" TextWrapping="Wrap" Text="1" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric"/>
                     <TextBlock HorizontalAlignment="Left" Margin="10,134,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Spirit"/></TextBlock>
                     <TextBox x:Name="textboxLife" HorizontalAlignment="Left" Margin="90,50,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange"/>
                     <TextBox x:Name="textboxVitality" HorizontalAlignment="Left" Margin="90,71,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange"/>
@@ -103,13 +103,13 @@
             </TabItem>
             <TabItem x:Name="tabTeleport" Header="Teleport">
                 <Grid Background="#FFFFFFFF">
-                    <Button HorizontalAlignment="Left" Margin="168,10,0,0" VerticalAlignment="Top" Width="145" Click="QuicksavePlayerPosition">
+                    <Button HorizontalAlignment="Left" Margin="149,10,0,0" VerticalAlignment="Top" Width="134" Click="QuicksavePlayerPosition">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Quicksave"/>
                             <TextBlock x:Name="textQuicksave_Hotkey" Foreground="Gray"/>
                         </StackPanel>
                     </Button>
-                    <Button HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="145" Click="QuickloadPlayerPosition">
+                    <Button HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="134" Click="QuickloadPlayerPosition">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Quickload"/>
                             <TextBlock x:Name="textQuickload_Hotkey" Foreground="Gray"/>
@@ -124,9 +124,9 @@
                     </ListBox>
                     <TextBlock x:Name="textCurrentMap" HorizontalAlignment="Left" Margin="10,56,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Current map:"/></TextBlock>
                     <TextBlock x:Name="textSavedPosition" HorizontalAlignment="Left" Margin="10,35,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Saved"/><Run Text=" position"/><Run Text=":"/><Run Text=" "/><Run Text="0, 0, 0"/></TextBlock>
-                    <Button Content="Save Position" HorizontalAlignment="Left" Margin="10,277,0,0" VerticalAlignment="Top" Width="80"  Click="SavePlayerPosition"/>
-                    <Button Content="Load Position" HorizontalAlignment="Left" Margin="180,277,0,0" VerticalAlignment="Top" Width="80" Click="LoadPlayerPosition"/>
-                    <Button Content="Remove" HorizontalAlignment="Left" Margin="95,277,0,0" VerticalAlignment="Top" Width="80"  Click="RemovePlayerPositionEntry"/>
+                    <Button Content="Save Position" HorizontalAlignment="Left" Margin="95,277,0,0" VerticalAlignment="Top" Width="80"  Click="SavePlayerPosition"/>
+                    <Button Content="Load Position" HorizontalAlignment="Left" Margin="10,277,0,0" VerticalAlignment="Top" Width="80" Click="LoadPlayerPosition"/>
+                    <Button Content="Remove" HorizontalAlignment="Left" Margin="180,277,0,0" VerticalAlignment="Top" Width="80"  Click="RemovePlayerPositionEntry"/>
 
                     <ComboBox x:Name="comboDestinations" HorizontalAlignment="Center" Margin="0,307,0,0" VerticalAlignment="Top" Width="303">
                         <ComboBox.ItemTemplate>
@@ -135,7 +135,7 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                    <Button Content="Set Destination" HorizontalAlignment="Right" Margin="0,334,10,0" VerticalAlignment="Top" RenderTransformOrigin="1.805,0.146" Width="133" Click="SetWarpPoint"/>
+                    <Button Content="Set Broken Branch Destination" HorizontalAlignment="Right" Margin="0,334,10,0" VerticalAlignment="Top" RenderTransformOrigin="1.805,0.146" Width="191" Click="SetWarpPoint"/>
 
                 </Grid>
             </TabItem>
@@ -148,11 +148,11 @@
                     <CheckBox x:Name="checkboxStateMonitor" Content="Monitor game state changes" HorizontalAlignment="Left" Margin="12,70,0,0" VerticalAlignment="Top"/>
                     <Button Content="Clear" HorizontalAlignment="Left" Margin="221,86,0,0" VerticalAlignment="Top" Width="74" Click="ClearStateMonitor"/>
                     <CheckBox x:Name="checkboxMonsterStateMonitor" Content="Monitor monster state changes" HorizontalAlignment="Left" Margin="12,90,0,0" VerticalAlignment="Top"/>
-                    <ComboBox x:Name="comboboxStateType" HorizontalAlignment="Left" Margin="45,10,0,0" VerticalAlignment="Top" Width="65" SelectedIndex="0" Foreground="Black" PreviewTextInput="TextBox_VerifyNumeric">
+                    <ComboBox x:Name="comboboxStateType" HorizontalAlignment="Left" Margin="40,10,0,0" VerticalAlignment="Top" Width="70" SelectedIndex="0" Foreground="Black" PreviewTextInput="TextBox_VerifyNumeric" SelectionChanged="TextBox_UpdateStateDisplay">
                         <ComboBoxItem Content="Game"/>
                         <ComboBoxItem Content="Monster"/>
                     </ComboBox>
-                    <ComboBox x:Name="comboboxStateLevel" HorizontalAlignment="Left" Margin="45,37,0,0" VerticalAlignment="Top" Width="65" SelectedIndex="0" IsEditable="True">
+                    <ComboBox x:Name="comboboxStateLevel" HorizontalAlignment="Left" Margin="40,37,0,0" VerticalAlignment="Top" Width="70" SelectedIndex="0" IsEditable="True">
                         <ComboBoxItem Content="10101"/>
                         <ComboBoxItem Content="10201"/>
                         <ComboBoxItem Content="10301"/>
@@ -177,6 +177,7 @@
             <TabItem x:Name="tabError" Header="Error">
                 <Grid Background="#FFFFFFFF">
                     <TextBlock x:Name="textError" HorizontalAlignment="Center" Margin="0,29,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Text="Something went wrong"/><Run Language="en-au" Text=". Attempting to find AI Limit process."/></TextBlock>
+                    <TextBlock x:Name="textAddressStatus" HorizontalAlignment="Left" Margin="23,91,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Text="Address:"/>
 
                 </Grid>
             </TabItem>

@@ -42,11 +42,12 @@ public partial class MainWindow : Window, IDisposable
         InitializeComponent();
 
         Closing += WindowClosed;
+        Loaded += WindowLoaded;
 
         AILimit = new AILimitLink();
 
         InitialSetup();
-        LoadSettings();
+        
     }
 
     public void Dispose()
@@ -76,21 +77,58 @@ public partial class MainWindow : Window, IDisposable
         Dispose();
     }
 
+    void WindowLoaded(object sender, EventArgs e)
+    {
+        LoadSettings();
+        ResizeTargetDisplayWindow();
+    }
+
     //
     // UI stuff
     //
+
+    private string GetAddressStateText(AddressTypes type)
+    {
+        IntPtr address = AILimit.GetAddress(type);
+
+        string returnText = "";
+
+        if (address > 0x100000)
+            return address.ToString("X");
+
+        return "Not found";
+    }
+
     private void uiTimer_Tick(object sender, EventArgs e)
     {
+        // TODO: Replace checking the variables directly with a method that reports current link state
         if (!AILimit.linkActive)
         {
             this.Title = "AI Limit Tool - game not found";
             textError.Text = "Game not found. Attempting to find AI Limit process. If the game is open, please try restarting.";
+            textAddressStatus.Text = "";
             DisableTabs(true);
+        }
+        else if (!AILimit.modulesFound)
+        {
+            this.Title = "AI Limit Tool - searching for modules";
+            textError.Text = "AI Limit process found. Searching for modules. If this does not resolve within a few seconds, please try restarting.";
+
+            textAddressStatus.Text = "GameAssembly.dll: " + GetAddressStateText(AddressTypes.ArchiveData) + "\n"
+                                + "UnityPlayer.dll: " + GetAddressStateText(AddressTypes.UnityPlayer);
         }
         else if (!AILimit.mainObjectsFound)
         {
             this.Title = "AI Limit Tool - searching for offsets";
-            textError.Text = "AI Limit process found. Attempting to find offsets. This step cannot be completed until in the game itself.";
+            textError.Text = "AI Limit process found. Attempting to find offsets. This step cannot be completed until a save game is loaded. If game is loaded, please try restarting.";
+
+            textAddressStatus.Text = "ArchiveData: " + GetAddressStateText(AddressTypes.ArchiveData) + "\n"
+                                + "Player: " + GetAddressStateText(AddressTypes.Player) + "\n"
+                                + "LoadingView: " + GetAddressStateText(AddressTypes.LoadingView) + "\n"
+                                + "LevelRoot: " + GetAddressStateText(AddressTypes.LevelRoot) + "\n"
+                                + "Transfer Destination: " + GetAddressStateText(AddressTypes.TransferDestination) + "\n"
+                                + "Timer: " + GetAddressStateText(AddressTypes.Timer);
+
             DisableTabs(true);
         }
 
@@ -125,11 +163,7 @@ public partial class MainWindow : Window, IDisposable
                 UpdateTargetDisplay();
 
             if (AILimit.IsLoadingScreenActive())
-            {
                 UpdateTeleportTab();
-
-
-            }
         }
         else
         {
@@ -137,8 +171,7 @@ public partial class MainWindow : Window, IDisposable
             {
                 uiActive = true;
                 InitUI();
-                this.Title = "AI Limit Tool";
-                
+                this.Title = "AI Limit Tool";   
             }
         }
     }
@@ -464,15 +497,6 @@ public partial class MainWindow : Window, IDisposable
         textboxSpirit.Text = AILimit.SetPlayerStats(PlayerStats.Spirit).ToString();
 
         textboxCrystals.Text = AILimit.SetPlayerStats(PlayerStats.Crystals).ToString();
-    }
-
-    //
-    // Buton handlers
-    //
-
-    private void buttonSetStats_Click(object sender, RoutedEventArgs e)
-    {
-
     }
 
     //
@@ -1001,7 +1025,12 @@ public partial class MainWindow : Window, IDisposable
     {
         try
         {
-            using (StreamReader sr = new StreamReader(System.AppDomain.CurrentDomain.BaseDirectory + "settings.dat"))
+            string file = System.AppDomain.CurrentDomain.BaseDirectory + "settings.dat";
+
+            if (!File.Exists(file))
+                return;
+
+            using (StreamReader sr = new StreamReader(file))
             {
                 string line;
                 while ((line = sr.ReadLine()) != null)
@@ -1052,5 +1081,45 @@ public partial class MainWindow : Window, IDisposable
         {
             MessageBox.Show("Problem loading settings file.");
         }
+    }
+
+    private void TargetDisplayOptionClicked(object sender, RoutedEventArgs e)
+    {
+        ResizeTargetDisplayWindow();
+    }
+
+    private void ResizeTargetDisplayWindow()
+    {
+        double size = 0;
+        const double lineSize = 15.8;
+        int count = -1;
+        try
+        {
+            if ((bool)checkboxTargetState.IsChecked)
+            {
+                size += lineSize * 1;
+                count++;
+            }
+            if ((bool)checkboxTargetDefense.IsChecked)
+            {
+                size += lineSize * 4;
+                count++;
+            }
+            if ((bool)checkboxTargetStatusResist.IsChecked)
+            {
+                size += lineSize * 3;
+                count++;
+            }
+
+            if (count == -1)
+                count = 0;
+
+
+            size += count * lineSize + 2;
+
+            targetDisplay.ResizeWindow(size);
+        }
+        catch (Exception f)
+        { }
     }
 }

@@ -192,7 +192,6 @@ namespace AILimitTool
 
                 if (sb.ToString() == "AILIMIT")
                 {
-                    Debug.Print(vkCode.ToString());
                     GameOptions option;
 
                     if (hotkeyList.TryGetValue((vkCode, (ModifierKeys)modifiers), out option))

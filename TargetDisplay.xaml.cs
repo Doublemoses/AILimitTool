@@ -97,5 +97,12 @@ namespace AILimitTool
             textHeaders.Text = headers;
             textValues.Text = values;
         }
+
+        public const int baseWindowSize = 200;
+
+        public void ResizeWindow(double size)
+        {
+            this.Height = baseWindowSize + size;
+        }
     }
 }

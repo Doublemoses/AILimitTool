@@ -171,7 +171,7 @@ namespace AILimitTool
         {
             if (AttachProcess())
             {
-                LocateBaseAddress();
+                LocateModules();
                 linkActive = true;
             }
             else
@@ -209,7 +209,9 @@ namespace AILimitTool
                 catch (Exception f)
                 {
                     linkActive = false;
+                    modulesFound = false;
                     mainObjectsFound = false;
+                    version = GameVersion.vNotFound;
                 }
             }
             else
@@ -219,6 +221,10 @@ namespace AILimitTool
 
             if (linkActive)
             {
+                if (!modulesFound)
+                {
+                    LocateModules();
+                }
 
                 if (!mainObjectsFound)
                 {
@@ -269,10 +275,16 @@ namespace AILimitTool
             }
         }
 
-        private void LocateBaseAddress()
+        public bool modulesFound = false;
+
+        private void LocateModules()
         {
+            bool gameAssemblyFound = false;
+            bool unityPlayerfound = false;
+
             try
             {
+                Debug.Print("Seeking modules...");
                 foreach (var module in _aiLimitProcess.Modules)
                 {
                     var processModule = module as ProcessModule;
@@ -282,16 +294,25 @@ namespace AILimitTool
                     {
                         gameAssemblyBaseAddress = processModule.BaseAddress;
                         gameAssemblySize = processModule.ModuleMemorySize;
+                        gameAssemblyFound = true;
                     }
 
                     if (moduleName == "unityplayer.dll")
                     {
                         unityPlayerBaseAddress = processModule.BaseAddress;
                         unityPlayerSize = processModule.ModuleMemorySize;
+                        unityPlayerfound = true;
+                    }
+
+                    if (gameAssemblyFound && unityPlayerfound)
+                    {
+                        Debug.Print("Modules found.");
+                        modulesFound = true;
+                        return;
                     }
                 }
             }
-            catch (Exception ex) { MessageBox.Show("Something went wrong."); }
+            catch (Exception f) { MessageBox.Show("Something went wrong - " + f.ToString()); }
 
         }
 
@@ -341,6 +362,8 @@ namespace AILimitTool
         {
             IdentifyGameVersion();
 
+            Debug.Print(version.ToString() + " " + gameAssemblySize + " Seeking object addresses...");
+
             if (version == GameVersion.v1_0_020b)
             {
                 archiveDataBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x042C9650, 0xB8, 0x0) + 0x18;
@@ -381,21 +404,50 @@ namespace AILimitTool
 
             timerAddress = ResolvePointerChain(unityPlayerBaseAddress + 0x01CA3978) + 0x60;
 
+            //Debug.Print((archiveDataBase > 0x100000).ToString() + (playerBase > 0x100000).ToString() + (loadingViewBase > 0x100000).ToString() + (levelRootBase > 0x100000).ToString());
+
             return archiveDataBase > 0x100000
                    && playerBase > 0x100000
                    && loadingViewBase > 0x100000
                    && levelRootBase > 0x100000
-                   && transferDestination > 0x100000;
+                   && transferDestination > 0x100000
+                   && timerAddress > 0x100000;
         }
 
-
-
-        public uint RunThread(IntPtr address, uint timeout = 0xFFFFFFFF, IntPtr? param = null)
+        public enum AddressTypes
         {
-            var thread = CreateRemoteThread(_aiLimitProcessHandle, IntPtr.Zero, 0, address, param ?? IntPtr.Zero, 0, IntPtr.Zero);
-            var returnValue = WaitForSingleObject(thread, timeout);
-            CloseHandle(thread); //return value unimportant
-            return returnValue;
+            GameAssembly,
+            UnityPlayer,
+            ArchiveData,
+            Player,
+            LoadingView,
+            LevelRoot,
+            TransferDestination,
+            Timer,
+        }
+
+        public IntPtr GetAddress(AddressTypes type)
+        {
+            switch (type)
+            {
+                case AddressTypes.GameAssembly:
+                    return gameAssemblyBaseAddress;
+                case AddressTypes.UnityPlayer:
+                    return unityPlayerBaseAddress;
+                case AddressTypes.ArchiveData:
+                    return archiveDataBase;
+                case AddressTypes.Player:
+                    return playerBase;
+                case AddressTypes.LoadingView:
+                    return loadingViewBase;
+                case AddressTypes.LevelRoot:
+                    return levelRootBase;
+                case AddressTypes.TransferDestination:
+                    return transferDestination;
+                case AddressTypes.Timer:
+                    return timerAddress;
+            }
+            return 0;
         }
 
         IntPtr ResolvePointerChain(params nint[] pointers)
@@ -901,40 +953,6 @@ namespace AILimitTool
             WriteDouble(address + Offsets.playerX, x);
             WriteDouble(address + Offsets.playerY, y);
             WriteDouble(address + Offsets.playerZ, z);
-        }
-
-        public void TestRunThread()
-        {
-            RunThread(gameAssemblyBaseAddress + 0x235AB50);
-        }
-
-
-        // Personal data dumping
-        public void DataToFile()
-        {
-            IntPtr based = ResolvePointerChain(levelRootBase, 0xA8, 0x10) + 0x20;
-
-
-            using (StreamWriter outputFile = new StreamWriter("D:\\ailimitactorlist-sewers.txt"))
-            {
-
-                for (int i = 0; i < 128; i++)
-                {
-                    outputFile.WriteLine("" + i + " " + ReadFloat(ResolvePointerChain(based + (i * 8), 0x58, 0x10) + 0x10).ToString() + " / " + ReadFloat(ResolvePointerChain(based + (i * 8), 0x58, 0x18) + 0x10).ToString());
-                }
-
-            }
-
-
-            based = ResolvePointerChain(archiveDataBase, 0x38, 0x18, 0x10) + 0x20;
-
-            using (StreamWriter outputFile = new StreamWriter("D:\\ailimit monsterstatelist-sewers.txt"))
-            {
-                for (int i = 0; i < 128; i++)
-                {
-                    outputFile.WriteLine("" + i + " ID: " + ReadUInt32((IntPtr)ReadUInt64(based + (i * 8)) + 0x10).ToString() + " Is dead: " + ReadByte((IntPtr)ReadUInt64(based + (i * 8)) + 0x14).ToString() + " Can relive: " + ReadByte((IntPtr)ReadUInt64(based + (i * 8)) + 0x1C).ToString());
-                }
-            }
         }
 
         public enum StateTypes

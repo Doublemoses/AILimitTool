@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AILimitTool"
         mc:Ignorable="d"
-        Title="Target Display" Height="441" Width="220" ResizeMode="NoResize" Topmost="True">
+        Title="Target Display" Height="220" Width="220" ResizeMode="NoResize" Topmost="True">
     <Grid HorizontalAlignment="Center" Width="220">
         <Label Content="HP" HorizontalAlignment="Left" Margin="6,-2,0,0" VerticalAlignment="Top" FontWeight="Bold" Height="26" Width="26" RenderTransformOrigin="0.986,0.411"/>
         <ProgressBar x:Name="barHP" HorizontalAlignment="Center" Height="5" Margin="0,19,0,0" VerticalAlignment="Top" Width="200" Background="#FF656565" Foreground="#FF920000" Value="100"/>
