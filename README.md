@@ -1,4 +1,6 @@
 # AI LImit Speedrun Practice Tool
+This is a prerelease version intended for testing. It will most likely be buggy, and some features are incomplete. Mainly tested on release version 1.0.022, but should work on all versions.
+
 A small tool designed to help speedrunners and challenge runners practice AI Limit. Supports hotkeys that are only active while the AI Limit window is on top. Hotkeys are currently hardcoded, but will be editable in the next release. Hotkeys are written next to the command, as well as right square bracket (]) being used to cycle through tabs.
 
 ## Features
