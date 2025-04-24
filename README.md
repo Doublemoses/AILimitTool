@@ -1,5 +1,5 @@
 # AI LImit Speedrun Practice Tool
-This is a prerelease version intended for testing. It will most likely be buggy, and some features are incomplete. Mainly tested on release version 1.0.022, but should work on all versions.
+This is a prerelease version intended for testing. It will most likely be buggy, and some features are incomplete. Mainly tested on release version 1.0.022, but should work on all versions. For any issues or questions, please ping me on the AI Limit speedrunning discord.
 
 A small tool designed to help speedrunners and challenge runners practice AI Limit. Supports hotkeys that are only active while the AI Limit window is on top. Hotkeys are currently hardcoded, but will be editable in the next release. Hotkeys are written next to the command, as well as right square bracket (]) being used to cycle through tabs.
 
@@ -15,7 +15,7 @@ A small tool designed to help speedrunners and challenge runners practice AI Lim
 
 **Movement Speed** (Hotkey: L) - Increases the player's movement speed to one defined by the player
 
-**Free mainhand weapon upgraades** - Removes the upgrade cost, but currently.only for the weapon held in the main hand. Can take a slight bit of time to take effect again after performing an upgrade.
+**Free mainhand weapon upgrades** - Removes the upgrade cost, but currently.only for the weapon held in the main hand. Can take a slight bit of time to take effect again after performing an upgrade.
 
 **Target Info Bos** (Hotkey: Ctrl + B) - Creates a small always-on-top window that shows the data from the current target, including HP, sync, tenacity, status buildup. Other checkboxes set optional data such as resists and super armour.
 
