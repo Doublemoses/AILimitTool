@@ -63,15 +63,16 @@
                     <CheckBox x:Name="checkboxTargetDefense" Content="Defense" HorizontalAlignment="Left" Margin="30,170,0,0" VerticalAlignment="Top" IsChecked="False" Checked="TargetDisplayOptionClicked" Unchecked="TargetDisplayOptionClicked"/>
                     <CheckBox x:Name="checkboxTargetState" Content="Current State" HorizontalAlignment="Left" Margin="30,150,0,0" VerticalAlignment="Top" IsChecked="False" Checked="TargetDisplayOptionClicked" Unchecked="TargetDisplayOptionClicked"/>
                     <CheckBox x:Name="checkboxTargetStatusResist" Content="Status Resist" HorizontalAlignment="Left" Margin="30,190,0,0" VerticalAlignment="Top" IsChecked="False" Checked="TargetDisplayOptionClicked" Unchecked="TargetDisplayOptionClicked"/>
-                    <ComboBox x:Name="comboboxBossRespawn" HorizontalAlignment="Left" Margin="10,210,0,0" VerticalAlignment="Top" Width="159" SelectedIndex="0">
+                    <ComboBox x:Name="comboboxBossRespawn" HorizontalAlignment="Left" Margin="10,231,0,0" VerticalAlignment="Top" Width="159" SelectedIndex="0">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Key}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                    <Button Content="Respawn" HorizontalAlignment="Left" Margin="174,211,0,0" VerticalAlignment="Top" Width="98" Click="RespawnSelectedBoss"/>
-                    <Button Content="Respawn All" HorizontalAlignment="Left" Margin="174,236,0,0" VerticalAlignment="Top" Width="98" Click="RespawnAllBosses"/>
+                    <Button Content="Respawn" HorizontalAlignment="Left" Margin="174,232,0,0" VerticalAlignment="Top" Width="98" Click="RespawnSelectedBoss"/>
+                    <Button Content="Respawn All" HorizontalAlignment="Left" Margin="174,257,0,0" VerticalAlignment="Top" Width="98" Click="RespawnAllBosses"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,210,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Boss Respawn (Do on main menu)"/></TextBlock>
                 </Grid>
             </TabItem>
             <TabItem x:Name="tabStats" Header="Stats">
@@ -139,6 +140,107 @@
 
                 </Grid>
             </TabItem>
+
+            <TabItem x:Name="tabItems" Header="Items">
+                <Grid Background="#FFFFFFFF">
+                    <ComboBox x:Name="comboWeapon" HorizontalAlignment="Left" Margin="66,37,0,0" VerticalAlignment="Top" Width="160" SelectedIndex="0">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Key}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <ComboBox x:Name="comboWeaponLevel" HorizontalAlignment="Left" Margin="146,64,0,0" VerticalAlignment="Top" Width="56" SelectedIndex="0" HorizontalContentAlignment="Right">
+                        <ComboBoxItem Content="0"/>
+                        <ComboBoxItem Content="1"/>
+                        <ComboBoxItem Content="2"/>
+                        <ComboBoxItem Content="3"/>
+                        <ComboBoxItem Content="4"/>
+                        <ComboBoxItem Content="5"/>
+                        <ComboBoxItem Content="6"/>
+                        <ComboBoxItem Content="7"/>
+                        <ComboBoxItem Content="8"/>
+                        <ComboBoxItem Content="9"/>
+                        <ComboBoxItem Content="Max"/>
+                    </ComboBox>
+                    <ComboBox x:Name="comboShop" HorizontalAlignment="Left" Margin="66,10,0,0" VerticalAlignment="Top" Width="230" SelectedIndex="0">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Key}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,13,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Shop"/></TextBlock>
+                    <Button Content="Set" HorizontalAlignment="Left" Margin="231,38,0,0" VerticalAlignment="Top" Width="65" Click="SetShopWeapon"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,40,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Weapon"/></TextBlock>
+                    <TextBlock HorizontalAlignment="Left" Margin="66,67,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Enhance Level"/></TextBlock>
+                    <TextBlock HorizontalAlignment="Center" Margin="0,284,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="72" Width="303"><Run Text="This will replace the first item in the selected store with the "/><Run Text="chosen item"/><Run Text=". This change will permanently affect your"/><Run Text=" current"/><Run Text=" save file."/><Run Text=" T"/><Run Text="he "/><Run Text="specific store you are modifying "/><Run Text="must have been "/><Run Language="en-au" Text="visited already."/></TextBlock>
+                    <ComboBox x:Name="comboHelmet" HorizontalAlignment="Left" Margin="66,147,0,0" VerticalAlignment="Top" Width="160" SelectedIndex="0">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Key}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,150,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Helmet"/></TextBlock>
+                    <ComboBox x:Name="comboArmour" HorizontalAlignment="Left" Margin="66,174,0,0" VerticalAlignment="Top" Width="160" SelectedIndex="0">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Key}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,177,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Armor"/></TextBlock>
+                    <Button Content="Set" HorizontalAlignment="Left" Margin="231,148,0,0" VerticalAlignment="Top" Width="65" Click="SetShopHelmet"/>
+                    <Button Content="Set" HorizontalAlignment="Left" Margin="231,175,0,0" VerticalAlignment="Top" Width="65" Click="SetShopArmour"/>
+                    <ComboBox x:Name="comboSpells" HorizontalAlignment="Left" Margin="66,201,0,0" VerticalAlignment="Top" Width="160" SelectedIndex="0">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Key}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,204,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Spells"/></TextBlock>
+                    <Button Content="Set" HorizontalAlignment="Left" Margin="231,202,0,0" VerticalAlignment="Top" Width="65" Click="SetShopSpell"/>
+                    <ComboBox x:Name="comboGeneral" HorizontalAlignment="Left" Margin="66,257,0,0" VerticalAlignment="Top" Width="160" SelectedIndex="0">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Key}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Content="Set" HorizontalAlignment="Left" Margin="231,258,0,0" VerticalAlignment="Top" Width="65" Click="SetShopGeneral"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,260,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="General"/></TextBlock>
+                    <ComboBox x:Name="comboNucleus" HorizontalAlignment="Left" Margin="66,230,0,0" VerticalAlignment="Top" Width="160" SelectedIndex="0">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Key}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Content="Set" HorizontalAlignment="Left" Margin="231,231,0,0" VerticalAlignment="Top" Width="65" Click="SetShopNucleus"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,233,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Nucleus"/></TextBlock>
+                    <ComboBox x:Name="comboSeal" HorizontalAlignment="Left" Margin="66,91,0,0" VerticalAlignment="Top" Width="160" SelectedIndex="0">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Key}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <ComboBox x:Name="comboSealLevel" HorizontalAlignment="Left" Margin="146,120,0,0" VerticalAlignment="Top" Width="56" SelectedIndex="0" HorizontalContentAlignment="Right">
+                        <ComboBoxItem Content="0"/>
+                        <ComboBoxItem Content="1"/>
+                        <ComboBoxItem Content="2"/>
+                        <ComboBoxItem Content="3"/>
+                        <ComboBoxItem Content="4"/>
+                        <ComboBoxItem Content="Max"/>
+                    </ComboBox>
+                    <Button Content="Set" HorizontalAlignment="Left" Margin="231,92,0,0" VerticalAlignment="Top" Width="65" Click="SetShopSeal"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,94,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Seals"/></TextBlock>
+                    <TextBlock HorizontalAlignment="Left" Margin="66,123,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Enhance Level"/></TextBlock>
+                </Grid>
+            </TabItem>
+
             <TabItem x:Name="tabStates" Header="States">
                 <Grid Background="#FFFFFFFF">
                     <TextBox x:Name="textboxStateID" HorizontalAlignment="Left" Margin="159,12,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="49" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="TextBox_UpdateStateDisplay"/>
@@ -148,7 +250,7 @@
                     <CheckBox x:Name="checkboxStateMonitor" Content="Monitor game state changes" HorizontalAlignment="Left" Margin="12,70,0,0" VerticalAlignment="Top"/>
                     <Button Content="Clear" HorizontalAlignment="Left" Margin="221,86,0,0" VerticalAlignment="Top" Width="74" Click="ClearStateMonitor"/>
                     <CheckBox x:Name="checkboxMonsterStateMonitor" Content="Monitor monster state changes" HorizontalAlignment="Left" Margin="12,90,0,0" VerticalAlignment="Top"/>
-                    <ComboBox x:Name="comboboxStateType" HorizontalAlignment="Left" Margin="40,10,0,0" VerticalAlignment="Top" Width="70" SelectedIndex="0" Foreground="Black" PreviewTextInput="TextBox_VerifyNumeric" SelectionChanged="TextBox_UpdateStateDisplay">
+                    <ComboBox x:Name="comboStateType" HorizontalAlignment="Left" Margin="40,10,0,0" VerticalAlignment="Top" Width="70" SelectedIndex="0" Foreground="Black" PreviewTextInput="TextBox_VerifyNumeric" SelectionChanged="TextBox_UpdateStateDisplay">
                         <ComboBoxItem Content="Game"/>
                         <ComboBoxItem Content="Monster"/>
                     </ComboBox>

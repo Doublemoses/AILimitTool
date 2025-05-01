@@ -83,6 +83,32 @@ public partial class MainWindow : Window, IDisposable
         ResizeTargetDisplayWindow();
     }
 
+    private void InitialSetup()
+    {
+        LoadDestinationList();
+        LoadTeleportDestinations();
+
+        tabError.Visibility = Visibility.Hidden;
+
+        hotkeyManager = new HotkeyManager(this);
+        UpdateUIHotkeyText();
+
+        comboboxBossRespawn.ItemsSource = bossList;
+
+        comboShop.ItemsSource = vendorIDs;
+        comboWeapon.ItemsSource = weaponStoreIDs;
+        comboSeal.ItemsSource = sealStoreIDs;
+        comboHelmet.ItemsSource = helmetStoreIDs;
+        comboArmour.ItemsSource = armourStoreIDs;
+        comboSpells.ItemsSource = spellStoreIDs;
+        comboNucleus.ItemsSource = nucleusStoreIDs;
+        comboGeneral.ItemsSource = generalStoreIDs;
+
+        uiTimer.Tick += uiTimer_Tick;
+        uiTimer.Interval = TimeSpan.FromMilliseconds(100);
+        uiTimer.Start();
+    }
+
     //
     // UI stuff
     //
@@ -213,21 +239,21 @@ public partial class MainWindow : Window, IDisposable
         if ((bool)checkboxTargetDefense.IsChecked)
         {
             headers += "Physical Defense:\n" +
+                    "Fire Defense:\n" +
                     "Electric Defense:\n" +
-                    "Psycho Defense:\n" +
-                    "Dimension Defense:\n\n";
+                    "Shatter Defense:\n\n";
 
             values += AILimit.SetTargetMonsterValue(MonsterStats.PhysicalDefense, true).ToString("P1") + "\n";
+            values += AILimit.SetTargetMonsterValue(MonsterStats.FireDefense, true).ToString("P1") + "\n";
             values += AILimit.SetTargetMonsterValue(MonsterStats.ElectricDefense, true).ToString("P1") + "\n";
-            values += AILimit.SetTargetMonsterValue(MonsterStats.PsychoDefense, true).ToString("P1") + "\n";
-            values += AILimit.SetTargetMonsterValue(MonsterStats.DimensionDefense, true).ToString("P1") + "\n\n";
+            values += AILimit.SetTargetMonsterValue(MonsterStats.ShatterDefense, true).ToString("P1") + "\n\n";
         }
 
         if ((bool)checkboxTargetStatusResist.IsChecked)
         {
             headers += "Poison Resist:\n" +
                     "Piercing Resist:\n" +
-                    "Infect Resist:\n\n";
+                    "Infection Resist:\n\n";
 
             values += AILimit.SetTargetMonsterValue(MonsterStats.PoisonResist, true).ToString("P1") + "\n";
             values += AILimit.SetTargetMonsterValue(MonsterStats.PiercingResist, true).ToString("P1") + "\n";
@@ -364,7 +390,7 @@ public partial class MainWindow : Window, IDisposable
         {
             int tab = tabcontrolMain.SelectedIndex + 1;
 
-            if (tab == 4)
+            if (tab == (int)TabItems.Error)
                 tab = 0;
 
             tabcontrolMain.SelectedIndex = tab;
@@ -465,25 +491,9 @@ public partial class MainWindow : Window, IDisposable
         Player,
         Stats,
         Teleport,
+        Items,
         States,
         Error,
-    }
-
-    private void InitialSetup()
-    {
-        LoadDestinationList();
-        LoadTeleportDestinations();
-
-        tabError.Visibility = Visibility.Hidden;
-
-        hotkeyManager = new HotkeyManager(this);
-        UpdateUIHotkeyText();
-
-        comboboxBossRespawn.ItemsSource = bossList;
-
-        uiTimer.Tick += uiTimer_Tick;
-        uiTimer.Interval = TimeSpan.FromMilliseconds(100);
-        uiTimer.Start();
     }
 
     void PopulateStatsTab()
@@ -592,15 +602,13 @@ public partial class MainWindow : Window, IDisposable
         { "Colossaint",             Boss.Colossaint },
         { "Eunomia",                Boss.Eunomia },
         { "Absolver",               Boss.Absolver },
-        //{ "Boss Rush",              Boss.BossRush }, // Currently does not work
+        { "Boss Rush",              Boss.BossRush },
         { "Loskid",                 Boss.Loskid },
         //{ "Aether",                 Boss.Aether }, // Currently does not work
     };
 
     private void RespawnSelectedBoss(object sender, RoutedEventArgs e)
     {
-        MessageBox.Show("This option should be performed on the AI Limit main menu. I can't detect whether you're on the main menu yet, but that will happen next patch.");
-
         KeyValuePair<string, Boss> selected = (KeyValuePair<string, Boss>)comboboxBossRespawn.SelectedItem;
 
         RespawnBoss(selected.Value);
@@ -608,8 +616,6 @@ public partial class MainWindow : Window, IDisposable
 
     private void RespawnAllBosses(object sender, RoutedEventArgs e)
     {
-        MessageBox.Show("This option should be performed on the AI Limit main menu. I can't detect whether you're on the main menu yet, but that will happen next patch.");
-
         foreach (KeyValuePair<string, Boss> entry in bossList)
         {
             RespawnBoss(entry.Value);
@@ -745,6 +751,379 @@ public partial class MainWindow : Window, IDisposable
         UpdateStatusBar("Added " + int.Parse(textboxAddCrystals.Text) + " crystals, new total " + totalCrystals);
         textboxCrystals.Text = crystals.ToString();
         return;
+    }
+
+    //
+    // ITEMS TAB
+    //
+
+    Dictionary<string, uint> vendorIDs = new Dictionary<string, uint>
+    {
+        { "Grayrhino Grocery (Campsite)", 1001 },
+        { "Moose's (Top Apron)",          1002 },
+    };
+
+    Dictionary<string, uint> weaponStoreIDs = new Dictionary<string, uint> // Category 3
+    {
+        { "Arbiter",                         89 },
+        { "Blader Greatsword",               23 },
+        { "Blader Longsword",                 1 },
+        { "Blader Swords",                   12 },
+        { "Bonecrackers",                   155 },
+        { "Cast Iron Greatsword",           342 },
+        { "Corrupted Blader Greatsword",    320 },
+        { "Corrupted Blader Longsword",     232 },
+        { "Corrupted Blader Swords",        243 },
+        { "Dawnfrost",                      100 },
+        { "Envenomed Blade",                276 },
+        { "Forged Steel Blade",             265 },
+        { "Holy Embrace",                   199 },
+        { "Holy Ritual",                    221 },
+        { "Hunter's Blades",                298 },
+        { "Impact Drill",                   188 },
+        { "Knight's Lance",                 210 },
+        { "Materialism",                    166 },
+        { "Mercy",                          177 },
+        { "Opossums Sais",                  287 },
+        { "Pardoner",                       144 },
+        { "Pickaxe",                         67 },
+        { "Reapers",                         78 },
+        { "Red Deer",                        34 },
+        { "Road Sign",                      309 },
+        { "Rusty Longsword",                331 },
+        { "Rusty Pipe",                      45 },
+        { "Scrap Lance",                    122 },
+        { "Serrated Halberd",                56 },
+        { "Steel Axes",                     133 },
+        { "Stygian Touch",                  111 },
+        { "Wilted Foliage",                 254 },
+    };
+
+    Dictionary<string, uint> helmetStoreIDs = new Dictionary<string, uint> // Category 4
+    {
+        { "Bandage",                         20 },
+        { "Blader Huntress Mask",             4 },
+        { "Blader Visor",                     1 },
+        { "Buddha Hat",                       9 },
+        { "Corrupted Blader Visor",          18 },
+        { "Clergy Headwear",                  5 },
+        { "Chlorostil Mask",                 12 },
+        { "Frame Glasses",                   19 },
+        { "Goggles",                          7 },
+        { "Guardian Helmet",                 23 },
+        { "Hunter's Helmet",                 14 },
+        { "Iron Pot",                         2 },
+        { "Listener Guild Hood",             15 },
+        { "Long Hair",                       25 },
+        { "Maid Hairband",                   17 },        
+        { "Monitor Hood",                    21 },
+        { "Osprey Hat",                       8 },
+        { "Osprey Ponytail",                 13 },
+        { "Ponytail",                         6 },
+        { "Rabbit Ears",                     16 },
+        { "Ragged Hood",                     26 },
+        { "Takamagahara Hat",                10 },
+        { "The Child's Tiara",               24 },
+        { "Thorny Headgear",                  3 },
+        { "Twisted Braid",                   11 },
+        { "White Sparrow's Mask",            22 },
+    };
+
+    Dictionary<string, uint> armourStoreIDs = new Dictionary<string, uint> // Category 5
+    {
+        { "Blader Armor",                     3 },
+        { "Blader Huntress Attire",           8 },
+        { "Casual Blader Suit",               2 },
+        { "Clergy Robe",                     11 },
+        { "Corrupted Blader Armor",          18 },
+        { "Enterprise Investigator",          4 },
+        { "Fisherman's Suit",                13 },
+        { "Guardian Armor",                   7 },   
+        { "Hunter's Armor",                  14 },
+        { "Listener Guild Uniform",          15 },
+        { "Maid Outfit",                     17 },
+        { "Patient's Clothing",              20 },
+        { "Rabbit Set",                      16 },
+        { "Ragged Clothes",                   1 },
+        { "Raincoat",                        12 },
+        { "Researcher's Robe",               19 },
+        { "Scavenger's Clothing",             6 },
+        { "The Child's Attire",               9 },
+        { "Traveller's Coat",                 5 },
+        { "Traveller's Outfit",              10 },
+    };
+
+    Dictionary<string, uint> spellStoreIDs = new Dictionary<string, uint> // Category 8
+    {
+        { "Counter Field",                 2002 },
+        { "Piercing Claw",                 2005 },
+        { "Shield",                        2003 },
+        { "Thunder Step",                  2004 },
+        { "Electrification",                 16 },
+        { "Ethereal Beam",                   12 },
+        { "Ethereal Orb",                    11 },
+        { "EX-Railgun",                      18 },
+        { "Flame Jet",                        8 },
+        { "Ignition",                        15 },
+        { "Lightning Cluster",               10 },
+        { "Lightning Bolt",                   5 },
+        { "Lightning Hammer",                 7 },
+        { "Lightning Tornado",                3 },
+        { "Minimum Pain",                    13 },
+        { "Missile Barrage",                 17 },
+        { "Partial Reconstruction",           2 },
+        { "Railgun",                          1 },
+        { "Scales Blast",                     9 },
+        { "Spears of Punishment",             4 },
+        { "Terra Inferno",                    6 },
+        { "Trailblazer's Oath",              14 },
+    };
+
+    Dictionary<string, uint> nucleusStoreIDs = new Dictionary<string, uint> // Category 9
+    {
+        { "Cleansing Knight's Nucleus",       4 },
+        { "Clergy's Nucleus",                 5 },
+        { "Divine Vessel's Nucleus",          9 },
+        { "Elite Necro's Fusion Nucleus",     7 },
+        { "Elite Necro's Nucleus",            3 },
+        { "Guardian's Nucleus",              10 },
+        { "Mutant Clergy's Nucleus",          8 },
+        { "Mutant Blader Nucleus",           11 },
+        { "Nucleus on the Child's Tiara",    12 },
+        { "Persephone's Nucleus",             6 },
+        { "Standard Nucleus",                 1 },
+        { "Turbid Nucleus",                  13 },
+        { "Void Nucleus",                     2 },
+    };
+
+    Dictionary<string, uint> sealStoreIDs = new Dictionary<string, uint> // Category 7
+    {
+        { "Seal of Clergies",              1060 },
+        { "Seal of Executor",              1030 },
+        { "Seal of Investigator",          1040 },
+        { "Seal of Newborn",               1000 },
+        { "Seal of Pilgrim",               1020 },
+        { "Seal of the Tree",              1050 },
+        { "Standard Seal of Bladers",      1010 },
+
+        { "Breath of Life",                2001 },
+        { "Burst",                         2032 },
+        { "Brief Condensation",            2020 },
+        { "Brief Polymerization",          2019 },
+        { "Cleansing Therapy",             2027 },
+        { "Cold Therapy",                  2026 },
+        { "Collapse",                      2033 },
+        { "Conversion",                    2038 },
+        { "Deadwood Form",                 2030 },
+        { "Deviation",                     2039 },
+        { "Divine Guardian",               2012 },
+        { "Drizzle",                       2013 },
+        { "Emerald Form",                  2023 },
+        { "Ethereal Tone",                 2029 },
+        { "Everlasting Piercing",          2042 },
+        { "Fortified Shield",              2043 },
+        { "Gluttony",                      2037 },
+        { "Gold Hoarder",                  2009 },
+        { "Gush",                          2045 },
+        { "Hardened Skin",                 2010 },
+        { "Harsh Voice",                   2028 },
+        { "Hyperstability",                2006 },
+        { "Inertia Transformation",        2016 },
+        { "Ingestion",                     2036 },
+        { "Insulation Transformation",     2018 },
+        { "Jade Form",                     2022 },
+        { "Metastability",                 2004 },
+        { "Monolith Form",                 2031 },
+        { "Moon Dew",                      2024 },
+        { "Moon Radiance",                 2025 },
+        { "Neutral Transformation",        2017 },
+        { "Nova",                          2046 },
+        { "Precipitation",                 2021 },
+        { "Quagmire",                      2014 },
+        { "Sand Accumulator",              2007 },
+        { "Scattered Stars",               2041 },
+        { "Slayer",                        2034 },
+        { "Stability",                     2005 },
+        { "Steel Shell",                   2011 },
+        { "Stone Builder",                 2008 },
+        { "Submerged Coffin",              2015 },
+        { "Tide of Life",                  2002 },
+        { "Thunder Mastery",               2044 },
+        { "Torrent of Life",               2003 },
+        { "Tyrant",                        2035 },
+        { "Variation",                     2040 },
+    };
+
+    //    1 Healing materials and battle consumables
+    //  101 Upgrade materials
+    // 1001 Junk items 
+    // 2001 Spell Frame + abilities
+    // 2101 Soil
+    // 2601 Keys
+    Dictionary<string, uint> generalStoreIDs = new Dictionary<string, uint> // Category 0
+    {
+        { "Antidote",                        14 },
+        { "Devitalized Fetus",               11 },
+        { "Disordered Fetus",                12 },
+        { "Envenomed Needle",                15 },
+        { "Eucharist",                        4 },
+        { "Mud Ball",                         2 },
+        { "Magnetic Surge",                   9 },
+        { "Mini Bomb",                        6 },
+        { "Phosphorous Dart",                16 },
+        { "Portable Electrification",         7 },
+        { "Portable Ignition",               13 },
+        { "Portable Lightning Bolt",         19 },
+        { "Portable Lightning Orb",          20 },
+        { "Pure Crystal",                     8 },
+        { "Sacred Blood Crystal",            17 },
+        { "Salted Mud Ball",                  3 },
+        { "Shriek Core",                     18 },
+        { "Stabilizer",                      10 },
+        { "Stone",                            5 },
+
+        { "Adrammelech's Badge",           2027 },
+        { "Ancient Map",                   2013 },
+        { "Azure Branch",                  2023 },
+        { "Bunny Doll Arrisa",             2025 },
+        { "Covenant: Sewer Town",          2018 },
+        { "Covenant: Underground Parish",  2017 },
+        { "Crystal Sprout",                2014 },
+        { "Dark Branch",                   2024 },
+        { "Dew Essence",                   2009 },
+        { "Golden Branch",                 2022 },
+        { "Living Seed",                   2020 },
+        { "Merchant's Map",                2019 },
+        { "Nameless Flower",               2021 },
+        { "Nutrition Cube",                2016 },
+        { "Observation Record",            2028 },
+        { "Old Locator Ring",              2015 },
+        { "Old Notepad",                   2029 },
+        { "Osprey Badge",                  2012 },
+        { "Purified Soil",                 2008 },
+        { "Seal Needle",                   2010 },
+        { "Vessel Remains",                2026 },
+
+        { "Soil: Arboretum",               2104 },
+        { "Soil: Flooded Street",          2100 },
+        { "Soil: Sewer Town",              2106 },
+        { "Soil: Subway Station",          2105 },
+        { "Soil: Twilight Hill",           2103 },
+        { "Soil: Underground Parish",      2102 },
+        { "Soil: Withered Forest",         2101 },
+
+        { "Arboretum Key",                 2602 },
+        { "Cemetary Key",                  2603 },
+        { "Console Key",                   2606 },
+        { "Hideout Key",                   2604 },
+        { "Inspector's Emblem",            2608 },
+        { "Laboratory Key",                2612 },
+        { "Reservoir Key",                 2601 },
+        { "Train Pass",                    2611 },
+        { "Train Ticket",                  2610 },
+        { "Ward Key",                      2607 },
+    };
+
+    enum ItemCategories
+    {
+        Item,               // These categories all share the same item IDs. 
+        Materials,          // The category determines what section of the
+        Goods,              // store page it appears in.
+        Weapon,
+        Helmet,
+        Armour,
+        Nucleus,
+        Seal,
+        Spell,
+    }
+
+    private void SetShopItem(ItemCategories itemCategory)
+    {
+        uint itemID = 0;
+        string itemName = "";
+
+        switch (itemCategory)
+        {
+            case ItemCategories.Weapon:
+                itemID = ((KeyValuePair<string, uint>)comboWeapon.SelectedItem).Value + (uint)comboWeaponLevel.SelectedIndex;
+                itemName = ((KeyValuePair<string, uint>)comboWeapon.SelectedItem).Key + " +" + (uint)comboWeaponLevel.SelectedIndex;
+                break;
+            case ItemCategories.Seal:
+                itemID = ((KeyValuePair<string, uint>)comboSeal.SelectedItem).Value;
+                itemName = ((KeyValuePair<string, uint>)comboSeal.SelectedItem).Key;
+                Debug.Print(itemID + "");
+                if (itemID > 1009 && itemID < 2000) // These are seals that have upgrade levels, except for the base seal ID 1000, which cannot be upgraded
+                {
+                    itemID += (uint)comboSealLevel.SelectedIndex;
+                    itemName += " +" + (uint)comboSealLevel.SelectedIndex;
+                }
+                Debug.Print(itemID + "");
+                break;
+            case ItemCategories.Helmet:
+                itemID = ((KeyValuePair<string, uint>)comboHelmet.SelectedItem).Value;
+                itemName = ((KeyValuePair<string, uint>)comboHelmet.SelectedItem).Key;
+                break;
+            case ItemCategories.Armour:
+                itemID = ((KeyValuePair<string, uint>)comboArmour.SelectedItem).Value;
+                itemName = ((KeyValuePair<string, uint>)comboArmour.SelectedItem).Key;
+                break;
+            case ItemCategories.Spell:
+                itemID = ((KeyValuePair<string, uint>)comboSpells.SelectedItem).Value;
+                if (itemID > 2000)
+                    itemCategory = ItemCategories.Item; // Abilities are under generic item category, but placed with spells in the ui because they are similar enough and saves space
+                itemName = ((KeyValuePair<string, uint>)comboSpells.SelectedItem).Key;
+                break;
+            case ItemCategories.Nucleus:
+                itemID = ((KeyValuePair<string, uint>)comboNucleus.SelectedItem).Value;
+                itemName = ((KeyValuePair<string, uint>)comboNucleus.SelectedItem).Key;
+                break;
+            case ItemCategories.Item:
+                itemID = ((KeyValuePair<string, uint>)comboGeneral.SelectedItem).Value;
+                itemName = ((KeyValuePair<string, uint>)comboGeneral.SelectedItem).Key;
+                break;
+        }
+
+        bool success = AILimit.SetShopItem(((KeyValuePair<string, uint>)comboShop.SelectedItem).Value, itemID, (uint)itemCategory);
+
+        if (success)
+            UpdateStatusBar( itemName + " added to " + ((KeyValuePair<string, uint>)comboShop.SelectedItem).Key);
+        else
+            MessageBox.Show("There was a problem (I don't know what). Try visiting the store, then trying again.");
+    }
+
+    private void SetShopWeapon(object sender, RoutedEventArgs e)
+    {
+        SetShopItem(ItemCategories.Weapon);
+    }
+
+    private void SetShopSeal(object sender, RoutedEventArgs e)
+    {
+        SetShopItem(ItemCategories.Seal);
+    }
+
+    private void SetShopHelmet(object sender, RoutedEventArgs e)
+    {
+        SetShopItem(ItemCategories.Helmet);
+    }
+
+    private void SetShopArmour(object sender, RoutedEventArgs e)
+    {
+        SetShopItem(ItemCategories.Armour);
+    }
+
+    private void SetShopSpell(object sender, RoutedEventArgs e)
+    {
+        SetShopItem(ItemCategories.Spell);
+    }
+
+    private void SetShopNucleus(object sender, RoutedEventArgs e)
+    {
+        SetShopItem(ItemCategories.Nucleus);
+    }
+
+    private void SetShopGeneral(object sender, RoutedEventArgs e)
+    {
+        SetShopItem(ItemCategories.Item);
     }
 
     //
@@ -938,7 +1317,7 @@ public partial class MainWindow : Window, IDisposable
 
     private void SetState(object sender, RoutedEventArgs e)
     {
-        StateTypes stateType = comboboxStateType.SelectedIndex == 0 ? StateTypes.GameState : StateTypes.MonsterState;
+        StateTypes stateType = comboStateType.SelectedIndex == 0 ? StateTypes.GameState : StateTypes.MonsterState;
         int levelID = 0;
 
         if (stateType == StateTypes.MonsterState)
@@ -968,7 +1347,7 @@ public partial class MainWindow : Window, IDisposable
         try
         {
             int returnValue = AILimit.SetState(Convert.ToUInt32(textboxStateID.Text),
-                                                (comboboxStateType.SelectedIndex == 0 ? StateTypes.GameState : StateTypes.MonsterState),
+                                                (comboStateType.SelectedIndex == 0 ? StateTypes.GameState : StateTypes.MonsterState),
                                                 levelID: Convert.ToInt32(comboboxStateLevel.Text));
 
             if (returnValue == -1)

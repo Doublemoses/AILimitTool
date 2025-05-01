@@ -2,18 +2,25 @@
 using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Drawing;
 using System.Dynamic;
 using System.IO;
+using System.IO.Packaging;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Numerics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Media3D;
+using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace AILimitTool
 {
@@ -72,8 +79,8 @@ namespace AILimitTool
 
         public const int actorModelPhysicalDefense = 0x28;
         public const int actorModelElectricDefense = 0x30;
-        public const int actorModelPsychoDefense = 0x38;
-        public const int actorModelDimensionDefense = 0x40;
+        public const int actorModelShatterDefense = 0x38; // internally psycho defense
+        public const int actorModelFireDefense = 0x40; // internally dimension defense
 
         public const int actorModelPoisonResist = 0x60;
         public const int actorModelPiercingResist = 0x68;
@@ -93,6 +100,9 @@ namespace AILimitTool
         public const int levelID = 0x44;
         public const int levelName = 0x48;
         public const int levelModel = 0x58;
+
+        // ArchiveData shop stuff
+        public const int ShopSystemData = 0x78;
     }
 
     class AILimitLink : IDisposable
@@ -107,6 +117,7 @@ namespace AILimitTool
         int gameAssemblySize = 0;
 
         public bool linkActive = false;
+        public bool modulesFound = false;
         public bool mainObjectsFound = false;
 
         public bool loadingScreenActive = false;
@@ -125,8 +136,8 @@ namespace AILimitTool
         [DllImport("kernel32.dll")]
         private static extern bool ReadProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, int iSize, ref int lpNumberOfBytesRead);
 
-        [DllImport("ntdll.dll")]
-        static extern int NtWriteVirtualMemory(IntPtr ProcessHandle, IntPtr BaseAddress, byte[] Buffer, UInt32 NumberOfBytesToWrite, ref UInt32 NumberOfBytesWritten);
+        [DllImport("kernel32.dll")]
+        private static extern bool WriteProcessMemory(IntPtr hProcess, IntPtr lpBaseAddress, byte[] lpBuffer, int nSize, ref int lpNumberOfBytesWritten);
 
         [DllImport("kernel32.dll")]
         private static extern IntPtr CreateRemoteThread(IntPtr hProcess, IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, IntPtr lpThreadId);
@@ -138,6 +149,10 @@ namespace AILimitTool
         private static extern bool CloseHandle(IntPtr hObject);
 
 
+        // test
+
+
+        
 
 
         public void Dispose()
@@ -172,6 +187,7 @@ namespace AILimitTool
             if (AttachProcess())
             {
                 LocateModules();
+                IdentifyGameVersion();
                 linkActive = true;
             }
             else
@@ -224,6 +240,7 @@ namespace AILimitTool
                 if (!modulesFound)
                 {
                     LocateModules();
+                    IdentifyGameVersion();
                 }
 
                 if (!mainObjectsFound)
@@ -275,8 +292,6 @@ namespace AILimitTool
             }
         }
 
-        public bool modulesFound = false;
-
         private void LocateModules()
         {
             bool gameAssemblyFound = false;
@@ -312,7 +327,7 @@ namespace AILimitTool
                     }
                 }
             }
-            catch (Exception f) { MessageBox.Show("Something went wrong - " + f.ToString()); }
+            catch (Exception f) { MessageBox.Show("Locate modules error - " + f.ToString()); }
 
         }
 
@@ -321,8 +336,12 @@ namespace AILimitTool
         IntPtr loadingViewBase = 0;
         IntPtr levelRootBase = 0;
         IntPtr transferDestination = 0;
-        IntPtr timerAddress = 0;
+        
         IntPtr viewManagerBase = 0;
+
+        IntPtr timerAddress = 0;
+        IntPtr xPosCodeAddress = 0;
+        IntPtr zPosCodeAddress = 0;
 
         public bool versionIdentificationFailure = false;
         public GameVersion version = GameVersion.vNotFound;
@@ -358,10 +377,10 @@ namespace AILimitTool
         }
 
         // Stable pointers that should get set once and never change while game is running
+        // GameAssembly.dll pointers will change every patch
+        // UnityPlayer.dll pointers are stable across all versions
         private bool LocateMainObjects()
         {
-            IdentifyGameVersion();
-
             Debug.Print(version.ToString() + " " + gameAssemblySize + " Seeking object addresses...");
 
             if (version == GameVersion.v1_0_020b)
@@ -403,6 +422,8 @@ namespace AILimitTool
             }
 
             timerAddress = ResolvePointerChain(unityPlayerBaseAddress + 0x01CA3978) + 0x60;
+            xPosCodeAddress = unityPlayerBaseAddress + 0x0140227C;
+            zPosCodeAddress = unityPlayerBaseAddress + 0x01402288;
 
             //Debug.Print((archiveDataBase > 0x100000).ToString() + (playerBase > 0x100000).ToString() + (loadingViewBase > 0x100000).ToString() + (levelRootBase > 0x100000).ToString());
 
@@ -511,8 +532,9 @@ namespace AILimitTool
         //
         public void WriteMemory(IntPtr address, byte[] data)
         {
-            uint i = 0;
-            NtWriteVirtualMemory(_aiLimitProcessHandle, address, data, (uint)data.Length, ref i);
+            int i = 0;
+            //NtWriteVirtualMemory(_aiLimitProcessHandle, address, data, (uint)data.Length, ref i);
+            WriteProcessMemory(_aiLimitProcessHandle, address, data, data.Length, ref i);
         }
 
         public void WriteByte(IntPtr address, byte data)
@@ -534,6 +556,17 @@ namespace AILimitTool
         public void WriteDouble(IntPtr address, double data)
         {
             WriteMemory(address, BitConverter.GetBytes(data));
+        }
+
+        // Generates empty machine code that does nothing. Data is the default value.
+        public byte[] EmptyCode(int length, byte data = 0x90)
+        {
+            byte[] returnBytes = new byte[length];
+
+            for (int i = 0; i < length; i++)
+                returnBytes[i] = data;
+
+            return returnBytes;
         }
 
         public enum GameOptions
@@ -581,38 +614,6 @@ namespace AILimitTool
             return true;
         }
 
-
-        //
-        // Getting and setting data
-        //
-
-        // depreciated. eventually get rid of everything here
-        public enum DataTypes
-        {
-            // 100 - 199    Stats accessed through Player object, use GetValue()
-
-            Immortal = 100,
-            LockSync,
-            PlayerSpeed,
-
-
-            // 200 - 299    Stats accessed through Player -> ActorModel object
-            HP = 200,
-            HPMax,
-
-            // 300 - 399    Stats accessed through Player -> Target (targetted enemy), use GetMonsterValue()
-            TargetHP = 300,
-            TargetHPMax,
-            TargetHPPercent,
-            TargetSync,
-            TargetPoisonAccumulation,
-            TargetPiercingAccumulation,
-            TargetInfectionAccumulation,
-            TargetTenacityDecreaseTick,
-            TargetTenacity,
-            TargetTenacityMax,
-        }
-
         //
         // Loading data
         //
@@ -651,7 +652,8 @@ namespace AILimitTool
             TransferDestination,
         }
 
-        // if add is set, newValue should be added to existing value, instead of replacing it
+        // if add == true, newValue should be added to existing value, instead of replacing it
+        // if newValue is default -1, check current value and return it
         public uint SetPlayerStats(PlayerStats option, int newValue = -1, bool add = false)
         {
 
@@ -729,11 +731,6 @@ namespace AILimitTool
             return true;
         }
 
-        public void SetPlayerImmortal(bool value)
-        {
-
-        }
-
         public void SetPlayerSpeed(float speed)
         {
             IntPtr address = (IntPtr)ReadUInt64(playerBase) + Offsets.playerDefine;
@@ -748,8 +745,6 @@ namespace AILimitTool
         //
         // Retreving data values from enemies
         //
-
-        public IntPtr previousAddress = 0;
 
         public enum MonsterStats
         {
@@ -772,8 +767,8 @@ namespace AILimitTool
 
             PhysicalDefense,
             ElectricDefense,
-            PsychoDefense,
-            DimensionDefense,
+            ShatterDefense,
+            FireDefense,
 
             PoisonResist,
             PiercingResist,
@@ -782,34 +777,32 @@ namespace AILimitTool
             SuperArmourLevel,
         }
 
+        public IntPtr previousTargetAddress = 0;  // holds the memory address of the last targetted enemy
+
         public double SetTargetMonsterValue(MonsterStats stat, bool usePreviousAddressIfEmpty = false, double newValue = -1)
         {
             IntPtr address = ResolvePointerChain(playerBase, Offsets.playerTarget);
 
             if (address != 0)
             {
-                previousAddress = address;
+                previousTargetAddress = address;
             }
 
             if (address == 0 && usePreviousAddressIfEmpty)
             {
-                if (previousAddress == 0)
+                if (previousTargetAddress == 0)
                 {
                     return 0;
                 }
 
-                address = previousAddress;
+                address = previousTargetAddress;
             }
-
-            
 
             return SetMonsterValue(stat, address, newValue);
         }
 
         private double SetMonsterValue(MonsterStats option, IntPtr monsterAddress, double newValue = -1)
         {
-            //IntPtr playerTarget = ResolvePointerChain(playerBase) + Offsets.playerTarget;
-          //IntPtr actorModelBase = monsterAddress
             IntPtr playerTarget = ResolvePointerChain(playerBase) + Offsets.playerTarget;
             IntPtr actorModelBase = monsterAddress + Offsets.actorModelMonster;
             IntPtr address = 0;
@@ -847,11 +840,11 @@ namespace AILimitTool
                 case MonsterStats.ElectricDefense:
                     address = ResolvePointerChain(actorModelBase, Offsets.actorModelElectricDefense) + 0x10;
                     break;
-                case MonsterStats.PsychoDefense:
-                    address = ResolvePointerChain(actorModelBase, Offsets.actorModelPsychoDefense) + 0x10;
+                case MonsterStats.ShatterDefense:
+                    address = ResolvePointerChain(actorModelBase, Offsets.actorModelShatterDefense) + 0x10;
                     break;
-                case MonsterStats.DimensionDefense:
-                    address = ResolvePointerChain(actorModelBase, Offsets.actorModelDimensionDefense) + 0x10;
+                case MonsterStats.FireDefense:
+                    address = ResolvePointerChain(actorModelBase, Offsets.actorModelFireDefense) + 0x10;
                     break;
 
                 case MonsterStats.PoisonResist:
@@ -886,11 +879,9 @@ namespace AILimitTool
             if (!AddressInRange((ulong)address))
                 return 0;
 
-            // Assume we never need to manually set TenacityMax value.
+            // Assume we never need to manually set TenacityMax value, as it is the only field that isn't a float.
             if (newValue > -1)
-            {
                 WriteFloat(address, (float)newValue);
-            }
 
             if (returnType == ReturnTypes.returnUInt32)
                 return ReadUInt32(address);
@@ -932,6 +923,13 @@ namespace AILimitTool
             WriteUInt32(ResolvePointerChain(playerBase, Offsets.playerWeaponMain, Offsets.weaponDefine, Offsets.weaponLevelupItem, 0x10, 0x20) + 0x14, 0);
         }
 
+        //
+        // Player position stuff
+        //
+
+        readonly byte[] xPosOriginalCode = new byte[]  { 0x0F, 0x11, 0x81, 0xF0, 0x01, 0x00, 0x00 };        // movups [rcx+000001F0],xmm0
+        readonly byte[] zPosOriginalCode = new byte[]  { 0xF2, 0x0F, 0x11, 0x89, 0x00, 0x02, 0x00, 0x00 };  // movsd [rcx+00000200],xmm1
+
         public (double, double, double) GetPlayerPosition()
         {
             IntPtr address = ResolvePointerChain(playerBase, 0xA8, 0x10, 0x80);
@@ -950,10 +948,30 @@ namespace AILimitTool
             if (!AddressInRange((ulong)address))
                 return;
 
+            Thread SetPosition = new Thread(() => SetPlayerPositionThread(address, x, y, z));
+            SetPosition.Start();
+        }
+
+        // Overwrites code that sets the player position before writing new position.
+        // Sets new location, waits so that the engine doesn't immediately overwrite it, then changes the code back
+        private void SetPlayerPositionThread(IntPtr address, double x, double y, double z)
+        {
+            WriteMemory(xPosCodeAddress, EmptyCode(7));
+            WriteMemory(zPosCodeAddress, EmptyCode(8));
+
             WriteDouble(address + Offsets.playerX, x);
             WriteDouble(address + Offsets.playerY, y);
             WriteDouble(address + Offsets.playerZ, z);
+
+            Thread.Sleep(50);
+
+            WriteMemory(xPosCodeAddress, xPosOriginalCode);
+            WriteMemory(zPosCodeAddress, zPosOriginalCode);
         }
+
+        //
+        // Game state stuff
+        //
 
         public enum StateTypes
         {
@@ -994,7 +1012,7 @@ namespace AILimitTool
             return -1;
         }
 
-        private uint[,] states = new uint[2, 2000];          // Holds existing values of states [Game, Monster]
+        private uint[,] states = new uint[2, 2000];             // Holds existing values of states [Game, Monster]
         private uint[] oldStatesListSize = new uint[2] {0, 0};  // Size of statelist is dynamic, track size so statelog doesn't get spammed with rubbish when list size is updated {Game, Monster}
 
         // Scan through all states and save current value. Returns values that have changed since last scan.
@@ -1056,7 +1074,7 @@ namespace AILimitTool
             Aether,
         }
 
-        // States needed to respawn boss.
+        // States needed to respawn boss. (StateType, level, stateID)
         private Dictionary<Boss, List<(StateTypes, int, uint)>> bossRespawnStates = new Dictionary<Boss, List<(StateTypes, int, uint)>> ()
         {
             { Boss.SewerCleaner,    new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10101, 31),
@@ -1079,6 +1097,9 @@ namespace AILimitTool
                                                                                 (StateTypes.GameState,    0,  360010),
                                                                                 (StateTypes.GameState,    0,  360022)   }},
             { Boss.Absolver,        new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10502, 231)   }},
+            { Boss.BossRush,         new List<(StateTypes, int, uint)>() {      (StateTypes.MonsterState, 10502, 256),
+                                                                                (StateTypes.GameState,    0,  360023),
+                                                                                (StateTypes.GameState,    0,  360502)   }},
             { Boss.Loskid,          new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10504, 1),
                                                                                 (StateTypes.MonsterState, 10504, 2)     }},
         };
@@ -1091,9 +1112,46 @@ namespace AILimitTool
 
             foreach((StateTypes stateType, int level, uint state) entry in states)
             {
-                SetState(entry.state, entry.stateType, 0, entry.level);
+                int value = 0;
+
+                if (entry.state == 360502) // special case. only state that isn't set to 0
+                    value = 1;
+                SetState(entry.state, entry.stateType, value, entry.level);
             }
 
+        }
+
+        //
+        // Items / shop handlers
+        //
+
+        public bool SetShopItem(uint shopID, uint itemID, uint itemCategory)
+        {
+            IntPtr address = ResolvePointerChain(archiveDataBase, Offsets.ShopSystemData, 0x10);
+            uint size = ReadUInt32(address + 0x18);
+            address = (IntPtr)ReadUInt64(address + 0x10) + 0x20;
+
+            if (size > 20)
+                size = 20;
+
+            for (int i = 0; i < size; i++)
+            {
+                IntPtr currentAddress = (IntPtr)ReadUInt64(address + (i * 8));
+
+                if (ReadUInt32( currentAddress + 0x10 ) == shopID)
+                {
+                    currentAddress = ResolvePointerChain(currentAddress + 0x18, 0x10, 0x20);
+
+                    WriteUInt32(currentAddress + 0x14, itemID);                                     // Item
+                    WriteUInt32(currentAddress + 0x18, 0);                                          // Number of items bought
+                    WriteUInt32(ResolvePointerChain(currentAddress + 0x28) + 0x18, itemCategory);   // Category
+                    WriteUInt32(ResolvePointerChain(currentAddress + 0x28) + 0x20, 0xFFFFFFFF);     // Number in stock (0xFFFFFFFF is infinite)
+                    WriteUInt32(ResolvePointerChain(currentAddress + 0x28) + 0x24, 0);              // Price
+
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
