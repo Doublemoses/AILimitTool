@@ -284,6 +284,7 @@ public partial class MainWindow : Window, IDisposable
             tabMain.IsEnabled = false;
             tabStats.IsEnabled = false;
             tabTeleport.IsEnabled = false;
+            tabItems.IsEnabled = false;
             tabStates.IsEnabled = false;
         }
         else
@@ -293,6 +294,7 @@ public partial class MainWindow : Window, IDisposable
             tabMain.IsEnabled = true;
             tabStats.IsEnabled = true;
             tabTeleport.IsEnabled = true;
+            tabItems.IsEnabled = true;
             tabStates.IsEnabled = true;
         }
     }
@@ -589,22 +591,28 @@ public partial class MainWindow : Window, IDisposable
     // Dictionary for binding
     private Dictionary<string, Boss> bossList = new Dictionary<string, Boss>()
     {
-        { "Sewer Cleaner",          Boss.SewerCleaner },
-        { "Lore",                   Boss.Lore },
-        { "Scavenger Patriarch",    Boss.Patriarch },
-        { "Necro",                  Boss.Necro },
-        { "Three-Faced Pardoner",   Boss.Pardoner },
-        { "Cleansing Knight",       Boss.CleansingKnight },
-        { "Saint",                  Boss.Saint },
-        { "Choirmaster",            Boss.Choirmaster },
-        { "Hunter of Bladers",      Boss.Hunter },
-        { "Persephone",             Boss.Persephone },
-        { "Colossaint",             Boss.Colossaint },
-        { "Eunomia",                Boss.Eunomia },
-        { "Absolver",               Boss.Absolver },
-        { "Boss Rush",              Boss.BossRush },
-        { "Loskid",                 Boss.Loskid },
-        //{ "Aether",                 Boss.Aether }, // Currently does not work
+        { "Sewer Cleaner",                      Boss.SewerCleaner },
+        { "Lore, the Lost Lancer",              Boss.Lore },
+        { "Scavenger Patriarch",                Boss.Patriarch },
+        { "Necro, the Panic Reaper",            Boss.NecroPanic },
+        { "Three-Faced Pardoner",               Boss.Pardoner },
+        { "Hunter Squad",                       Boss.HunterSquad },
+        { "Cleansing Knight",                   Boss.CleansingKnight },
+        { "Saint",                              Boss.Saint },
+        { "Choirmaster, the Inspector",         Boss.Choirmaster },
+        { "Hunter of Bladers",                  Boss.Hunter },
+        { "Persephone",                         Boss.Persephone },
+        { "Necro, the Wanderer of Undersea",    Boss.NecroWanderer },
+        { "Colossaint",                         Boss.Colossaint },
+        { "Eunomia, the Resplendent Bishop",    Boss.Eunomia },
+        { "Ursula",                             Boss.Ursula },
+        { "Guardians of the Tree",              Boss.Guardians },
+        { "Seraphim Absolver",                  Boss.Absolver },
+        { "Boss Rush",                          Boss.BossRush },
+        { "Vikas",                              Boss.Vikas },
+        { "Loskid, the Son",                    Boss.Loskid },
+        { "Aether, the Father",                 Boss.Aether },
+        { "Charon, the Nurturer",               Boss.Charon },
     };
 
     private void RespawnSelectedBoss(object sender, RoutedEventArgs e)

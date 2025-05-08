@@ -70,7 +70,7 @@ namespace AILimitTool
         public const int actorModelPoisonAccumulation = 0x78;
         public const int actorModelPiercingAccumulation = 0x80; // internally labelled puncture
         public const int actorModelInfectionAccumulation = 0x88;
-        public const int actorModelSync = 0xB0; // internally labelled as Confidence
+        public const int actorModelSync = 0xB0; // internally labelled confidence
 
         public const int actorModelPhysicalDamage = 0x20;
         public const int actorModelPoisonDamage = 0x48;
@@ -343,7 +343,6 @@ namespace AILimitTool
         IntPtr xPosCodeAddress = 0;
         IntPtr zPosCodeAddress = 0;
 
-        public bool versionIdentificationFailure = false;
         public GameVersion version = GameVersion.vNotFound;
         public Dictionary<uint, bool> addressFound = new Dictionary<uint, bool>();
 
@@ -1059,22 +1058,30 @@ namespace AILimitTool
             SewerCleaner,
             Lore,
             Patriarch,
-            Necro,
+            NecroPanic,
             Pardoner,
+            HunterSquad,
             CleansingKnight,
             Saint,
             Choirmaster,
             Hunter,
             Persephone,
+            NecroWanderer,
             Colossaint,
             Eunomia,
+
+            Ursula,
+            Guardians,
+
             Absolver,
             BossRush,
+            Vikas,
             Loskid,
             Aether,
+            Charon,
         }
 
-        // States needed to respawn boss. (StateType, level, stateID)
+        // States used to respawn bosses. (StateType, level, stateID)
         private Dictionary<Boss, List<(StateTypes, int, uint)>> bossRespawnStates = new Dictionary<Boss, List<(StateTypes, int, uint)>> ()
         {
             { Boss.SewerCleaner,    new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10101, 31),
@@ -1082,26 +1089,52 @@ namespace AILimitTool
             { Boss.Lore,            new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10101, 1),
                                                                                 (StateTypes.MonsterState, 10101, 173)   }},
             { Boss.Patriarch,       new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10201, 1)     }},
-            { Boss.Necro,           new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10201, 3)     }},
+            { Boss.NecroPanic,      new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10201, 3)     }},
             { Boss.Pardoner,        new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10301, 639)   }},
+            { Boss.HunterSquad,     new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10903, 201),
+                                                                                (StateTypes.MonsterState, 10903, 202),
+                                                                                (StateTypes.MonsterState, 10903, 203),
+                                                                                (StateTypes.MonsterState, 10903, 204),  }},
             { Boss.CleansingKnight, new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10302, 226)   }},
             { Boss.Saint,           new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10401, 2)     }},
             { Boss.Choirmaster,     new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10501, 1)     }},
             { Boss.Hunter,          new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10601, 50)    }},
             { Boss.Persephone,      new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10701, 1),
                                                                                 (StateTypes.MonsterState, 10701, 2)     }},
+            { Boss.NecroWanderer,   new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10401, 120)   }},
             { Boss.Colossaint,      new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10401, 1)     }},
             { Boss.Eunomia,         new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10401, 116),
                                                                                 (StateTypes.MonsterState, 10401, 117),
                                                                                 (StateTypes.MonsterState, 10401, 215),
                                                                                 (StateTypes.GameState,    0,  360010),
                                                                                 (StateTypes.GameState,    0,  360022)   }},
+            { Boss.Ursula,          new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10202, 1),
+                                                                                (StateTypes.MonsterState, 10202, 2)     }},
+            { Boss.Guardians,       new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10801, 28),
+                                                                                (StateTypes.MonsterState, 10801, 29),
+                                                                                (StateTypes.MonsterState, 10801, 30),
+                                                                                (StateTypes.MonsterState, 10801, 31),
+                                                                                (StateTypes.MonsterState, 10801, 32),
+                                                                                (StateTypes.MonsterState, 10801, 33),   }},
             { Boss.Absolver,        new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10502, 231)   }},
-            { Boss.BossRush,         new List<(StateTypes, int, uint)>() {      (StateTypes.MonsterState, 10502, 256),
+            { Boss.BossRush,        new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10502, 256),
                                                                                 (StateTypes.GameState,    0,  360023),
                                                                                 (StateTypes.GameState,    0,  360502)   }},
+            { Boss.Vikas,           new List<(StateTypes, int, uint)>() {       (StateTypes.GameState,    0,  399998),
+                                                                                (StateTypes.GameState,    0,  300515),
+                                                                                (StateTypes.GameState,    0,  200357),
+                                                                                (StateTypes.GameState,    0,  300518)   }},
             { Boss.Loskid,          new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10504, 1),
                                                                                 (StateTypes.MonsterState, 10504, 2)     }},
+            { Boss.Aether,          new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10902, 1),
+                                                                                (StateTypes.MonsterState, 10902, 100),
+                                                                                (StateTypes.GameState,    0,  360014),
+                                                                                (StateTypes.GameState,    0,  200900),
+                                                                                (StateTypes.GameState,    0,  333333)   }},
+            { Boss.Charon,          new List<(StateTypes, int, uint)>() {       (StateTypes.MonsterState, 10902, 3),
+                                                                                (StateTypes.MonsterState, 10902, 4),
+                                                                                (StateTypes.GameState,    0,  360015),
+                                                                                (StateTypes.GameState,    0,  333333)   }},
         };
 
         public void RespawnBoss(Boss boss)
@@ -1114,8 +1147,11 @@ namespace AILimitTool
             {
                 int value = 0;
 
-                if (entry.state == 360502) // special case. only state that isn't set to 0
+                // A few gamestates need to be set to something other than 0
+                if (entry.state == 360502) // Boss rush
                     value = 1;
+                if (entry.state == 399998) // Vikas quest progression
+                    value = 7;
                 SetState(entry.state, entry.stateType, value, entry.level);
             }
 
