@@ -34,7 +34,7 @@
 
                     <CheckBox x:Name="checkboxInfiniteDew" HorizontalAlignment="Left" Margin="10,70,0,0" VerticalAlignment="Top" Checked="InfiniteDew_Toggle" Unchecked="InfiniteDew_Toggle">
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Infinite healing dew"/>
+                            <TextBlock><Run Text="Infinite "/><Run Language="en-au" Text="consumables"/></TextBlock>
                             <TextBlock x:Name="textInfiniteDew_Hotkey" Foreground="Gray"/>
                         </StackPanel>
                     </CheckBox>
@@ -54,25 +54,39 @@
                         </StackPanel>
                     </CheckBox>
 
-                    <CheckBox x:Name="checkboxTargetInfo" HorizontalAlignment="Left" Margin="10,130,0,0" VerticalAlignment="Top" Checked="ShowTargetInfo_Toggle" Unchecked="ShowTargetInfo_Toggle">
+                    <CheckBox x:Name="checkboxTargetInfo" HorizontalAlignment="Left" Margin="10,150,0,0" VerticalAlignment="Top" Checked="ShowTargetInfo_Toggle" Unchecked="ShowTargetInfo_Toggle">
                         <StackPanel Orientation="Horizontal">
                             <TextBlock Text="Show Target Info box"/>
                             <TextBlock x:Name="textTargetInfo_Hotkey" Foreground="Gray"/>
                         </StackPanel>
                     </CheckBox>
-                    <CheckBox x:Name="checkboxTargetDefense" Content="Defense" HorizontalAlignment="Left" Margin="30,170,0,0" VerticalAlignment="Top" IsChecked="False" Checked="TargetDisplayOptionClicked" Unchecked="TargetDisplayOptionClicked"/>
-                    <CheckBox x:Name="checkboxTargetState" Content="Current State" HorizontalAlignment="Left" Margin="30,150,0,0" VerticalAlignment="Top" IsChecked="False" Checked="TargetDisplayOptionClicked" Unchecked="TargetDisplayOptionClicked"/>
-                    <CheckBox x:Name="checkboxTargetStatusResist" Content="Status Resist" HorizontalAlignment="Left" Margin="30,190,0,0" VerticalAlignment="Top" IsChecked="False" Checked="TargetDisplayOptionClicked" Unchecked="TargetDisplayOptionClicked"/>
-                    <ComboBox x:Name="comboboxBossRespawn" HorizontalAlignment="Left" Margin="10,231,0,0" VerticalAlignment="Top" Width="159" SelectedIndex="0">
+                    <CheckBox x:Name="checkboxTargetDefense" Content="Defense" HorizontalAlignment="Left" Margin="30,190,0,0" VerticalAlignment="Top" IsChecked="False" Checked="TargetDisplayOptionClicked" Unchecked="TargetDisplayOptionClicked"/>
+                    <CheckBox x:Name="checkboxTargetState" Content="Current State" HorizontalAlignment="Left" Margin="30,170,0,0" VerticalAlignment="Top" IsChecked="False" Checked="TargetDisplayOptionClicked" Unchecked="TargetDisplayOptionClicked"/>
+                    <CheckBox x:Name="checkboxTargetStatusResist" Content="Status Resist" HorizontalAlignment="Left" Margin="30,210,0,0" VerticalAlignment="Top" IsChecked="False" Checked="TargetDisplayOptionClicked" Unchecked="TargetDisplayOptionClicked"/>
+                    <ComboBox x:Name="comboboxBossRespawn" HorizontalAlignment="Left" Margin="10,251,0,0" VerticalAlignment="Top" Width="159" SelectedIndex="0">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Key}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                    <Button Content="Respawn" HorizontalAlignment="Left" Margin="174,232,0,0" VerticalAlignment="Top" Width="98" Click="RespawnSelectedBoss"/>
-                    <Button Content="Respawn All" HorizontalAlignment="Left" Margin="174,257,0,0" VerticalAlignment="Top" Width="98" Click="RespawnAllBosses"/>
-                    <TextBlock HorizontalAlignment="Left" Margin="10,210,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Boss Respawn (Do on main menu)"/></TextBlock>
+                    <Button Content="Respawn" HorizontalAlignment="Left" Margin="174,252,0,0" VerticalAlignment="Top" Width="98" Click="RespawnSelectedBoss"/>
+                    <Button Content="Respawn All" HorizontalAlignment="Left" Margin="174,277,0,0" VerticalAlignment="Top" Width="98" Click="RespawnAllBosses"/>
+                    <TextBlock HorizontalAlignment="Left" Margin="10,230,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Boss Respawn (Do on main menu)"/></TextBlock>
+                    <CheckBox x:Name="checkboxPassiveEnemies" HorizontalAlignment="Left" Margin="10,130,0,0" VerticalAlignment="Top" Checked="PassiveEnemies_Toggle" Unchecked="PassiveEnemies_Toggle">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock><Run Language="en-au" Text="Passive enemies"/></TextBlock>
+                            <TextBlock x:Name="textPassiveEnemies_Hotkey" Foreground="Gray"/>
+                        </StackPanel>
+                    </CheckBox>
+                    <!--
+                    <CheckBox x:Name="checkboxOneShotEnemies" HorizontalAlignment="Left" Margin="10,302,0,0" VerticalAlignment="Top" Checked="OneShotEnemies_Toggle" Unchecked="OneShotEnemies_Toggle">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock><Run Language="en-au" Text="One-shot enemies with melee attacks"/></TextBlock>
+                            <TextBlock x:Name="textFreeUpgrades_Hotkey2" Foreground="Gray"/>
+                        </StackPanel>
+                    </CheckBox>
+                    -->
                 </Grid>
             </TabItem>
             <TabItem x:Name="tabStats" Header="Stats">
@@ -275,6 +289,25 @@
                     <Separator HorizontalAlignment="Left" Margin="10,60,0,0" VerticalAlignment="Top" Height="10" Width="285"/>
                 </Grid>
             </TabItem>
+
+            <!-- Future feature
+
+            <TabItem x:Name="tabHotkeys" Header="Hotkeys">
+                <Grid Background="#FFFFFFFF">
+                    <ListBox x:Name="listboxHotkeys" d:ItemsSource="{d:SampleData ItemCount=5}" Margin="10,10,10,74">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Width="289">
+                                    <TextBlock Text="{Binding Path=Key}" />
+                                    <Button Content="Set State" Width="150" Click="SetHotkey"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </TabItem>
+            
+            -->
 
             <TabItem x:Name="tabError" Header="Error">
                 <Grid Background="#FFFFFFFF">

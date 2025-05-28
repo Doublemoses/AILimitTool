@@ -331,17 +331,20 @@ namespace AILimitTool
 
         }
 
-        IntPtr archiveDataBase = 0;
-        IntPtr playerBase = 0;
-        IntPtr loadingViewBase = 0;
-        IntPtr levelRootBase = 0;
-        IntPtr transferDestination = 0;
+        IntPtr archiveDataBase = IntPtr.Zero;
+        IntPtr playerBase = IntPtr.Zero;
+        IntPtr loadingViewBase = IntPtr.Zero;
+        IntPtr levelRootBase = IntPtr.Zero;
+        IntPtr transferDestination = IntPtr.Zero;
         
-        IntPtr viewManagerBase = 0;
+        IntPtr viewManagerBase = IntPtr.Zero;
 
-        IntPtr timerAddress = 0;
-        IntPtr xPosCodeAddress = 0;
-        IntPtr zPosCodeAddress = 0;
+        IntPtr timerAddress = IntPtr.Zero;
+        IntPtr xPosCodeAddress = IntPtr.Zero;
+        IntPtr zPosCodeAddress = IntPtr.Zero;
+
+        IntPtr infiniteConsumablesCodeAddress = IntPtr.Zero;
+        IntPtr passiveEnemiesCodeAddress = IntPtr.Zero;
 
         public GameVersion version = GameVersion.vNotFound;
         public Dictionary<uint, bool> addressFound = new Dictionary<uint, bool>();
@@ -353,6 +356,7 @@ namespace AILimitTool
             v1_0_020c, // and added letters to separate different versions
             v1_0_021,
             v1_0_022,
+            v1_0_023,
             vNotFound = 100,
         }
 
@@ -372,12 +376,16 @@ namespace AILimitTool
                 case 79888384:
                     version = GameVersion.v1_0_022;
                     break;
+                case 79896576:
+                    version = GameVersion.v1_0_023;
+                    break;
             }
         }
 
         // Stable pointers that should get set once and never change while game is running
         // GameAssembly.dll pointers will change every patch
         // UnityPlayer.dll pointers are stable across all versions
+        // TODO: Replace version checking with aob scanning for all fields
         private bool LocateMainObjects()
         {
             Debug.Print(version.ToString() + " " + gameAssemblySize + " Seeking object addresses...");
@@ -389,6 +397,9 @@ namespace AILimitTool
                 loadingViewBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x042CCF10, 0xB8, 0x0, 0x48, 0x78, 0x48);
                 levelRootBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x04330E68, 0xB8, 0x10) + 0x38;
                 transferDestination = ResolvePointerChain(gameAssemblyBaseAddress + 0x042FFC20, 0xB8) + 0x1C;
+
+                infiniteConsumablesCodeAddress = gameAssemblyBaseAddress + 0x240CDF3;
+                passiveEnemiesCodeAddress = gameAssemblyBaseAddress + 0x22AAE83;
             }
             else if (version == GameVersion.v1_0_020c)
             {
@@ -397,6 +408,9 @@ namespace AILimitTool
                 loadingViewBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x04353F78, 0xB8, 0x0, 0x48, 0x78, 0x48);
                 levelRootBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x04330DF0, 0xB8, 0x10) + 0x38;
                 transferDestination = ResolvePointerChain(gameAssemblyBaseAddress + 0x042FFBC8, 0xB8) + 0x1C;
+
+                infiniteConsumablesCodeAddress = gameAssemblyBaseAddress + 0x2422953;
+                passiveEnemiesCodeAddress = gameAssemblyBaseAddress + 0x22C0D93;
             }
             else if (version == GameVersion.v1_0_021)
             {
@@ -405,6 +419,9 @@ namespace AILimitTool
                 loadingViewBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x042DF2E8, 0xB8, 0x0, 0x48, 0x78, 0x48);
                 levelRootBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x043434B8, 0xB8, 0x10) + 0x38;
                 transferDestination = ResolvePointerChain(gameAssemblyBaseAddress + 0x04312158, 0xB8) + 0x1C;
+
+                infiniteConsumablesCodeAddress = gameAssemblyBaseAddress + 0x24177E3;
+                passiveEnemiesCodeAddress = gameAssemblyBaseAddress + 0x22B2893;
             }
             else if (version == GameVersion.v1_0_022)
             {
@@ -414,24 +431,40 @@ namespace AILimitTool
                 levelRootBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x04345600, 0xB8, 0x10) + 0x38;
                 transferDestination = ResolvePointerChain(gameAssemblyBaseAddress + 0x04314268, 0xB8) + 0x1C;
                 //viewManagerBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x04377100, 0xB8, 0x0); // Not used yet.
+
+                infiniteConsumablesCodeAddress = gameAssemblyBaseAddress + 0x2417A13;
+                passiveEnemiesCodeAddress = gameAssemblyBaseAddress + 0x22B2A13;
+            }
+            else if (version == GameVersion.v1_0_023)
+            {
+                archiveDataBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x042DFBC0, 0xB8, 0x0) + 0x18;
+                playerBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x042EB4A0, 0xB8) + 0xB40;
+                loadingViewBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x042E33C0, 0xB8, 0x0, 0x48, 0x78, 0x48);
+                levelRootBase = ResolvePointerChain(gameAssemblyBaseAddress + 0x04347638, 0xB8, 0x10) + 0x38;
+                transferDestination = ResolvePointerChain(gameAssemblyBaseAddress + 0x04316280, 0xB8) + 0x1C;
+
+                infiniteConsumablesCodeAddress = gameAssemblyBaseAddress + 0x2417203;
+                passiveEnemiesCodeAddress = gameAssemblyBaseAddress + 0x22B38D3;
             }
             else
             {
                 return false;
             }
 
-            timerAddress = ResolvePointerChain(unityPlayerBaseAddress + 0x01CA3978) + 0x60;
-            xPosCodeAddress = unityPlayerBaseAddress + 0x0140227C;
-            zPosCodeAddress = unityPlayerBaseAddress + 0x01402288;
+            if (archiveDataBase > 0x100000
+                && playerBase > 0x100000
+                && loadingViewBase > 0x100000
+                && levelRootBase > 0x100000
+                && transferDestination > 0x100000)
+            {
+                // UnityPlayer.dll addresses are unchanged across different patches. Assume they will be found if the others addresses found.
+                timerAddress = ResolvePointerChain(unityPlayerBaseAddress + 0x01CA3978) + 0x60;
+                xPosCodeAddress = unityPlayerBaseAddress + 0x0140227C;
+                zPosCodeAddress = unityPlayerBaseAddress + 0x01402288;
 
-            //Debug.Print((archiveDataBase > 0x100000).ToString() + (playerBase > 0x100000).ToString() + (loadingViewBase > 0x100000).ToString() + (levelRootBase > 0x100000).ToString());
-
-            return archiveDataBase > 0x100000
-                   && playerBase > 0x100000
-                   && loadingViewBase > 0x100000
-                   && levelRootBase > 0x100000
-                   && transferDestination > 0x100000
-                   && timerAddress > 0x100000;
+                return true;
+            }
+            return false;
         }
 
         public enum AddressTypes
@@ -483,13 +516,12 @@ namespace AILimitTool
 
         byte[] ReadMemory(IntPtr address, int size)
         {
-
             var data = new byte[size];
             var i = 1;
             ReadProcessMemory(_aiLimitProcessHandle, address, data, size, ref i);
             return data;
-
         }
+
         byte ReadByte(IntPtr address)
         {
             return ReadMemory(address, 1)[0];
@@ -557,7 +589,7 @@ namespace AILimitTool
             WriteMemory(address, BitConverter.GetBytes(data));
         }
 
-        // Generates empty machine code that does nothing. Data is the default value.
+        // Generates empty machine code that does nothing. 0x90 is the default value.
         public byte[] EmptyCode(int length, byte data = 0x90)
         {
             byte[] returnBytes = new byte[length];
@@ -577,6 +609,7 @@ namespace AILimitTool
             FreeUpgrade,
             InfiniteDew,
             PlayerSpeed,
+            PassiveEnemies,
 
             TargetInfo,
 
@@ -800,9 +833,9 @@ namespace AILimitTool
             return SetMonsterValue(stat, address, newValue);
         }
 
+        // TODO: Needs rewrite
         private double SetMonsterValue(MonsterStats option, IntPtr monsterAddress, double newValue = -1)
         {
-            IntPtr playerTarget = ResolvePointerChain(playerBase) + Offsets.playerTarget;
             IntPtr actorModelBase = monsterAddress + Offsets.actorModelMonster;
             IntPtr address = 0;
 
@@ -822,6 +855,9 @@ namespace AILimitTool
                 case MonsterStats.HPPercent: // value returned wont be a %, but assume hp% will never be used
                     address = ResolvePointerChain(actorModelBase, Offsets.actorModelHP) + 0x10;
                     newValue = ReadFloat(ResolvePointerChain(actorModelBase, Offsets.actorModelHPMax) + 0x10) * (newValue / 100);
+                    break;
+                case MonsterStats.PhysicalDamage:
+                    address = ResolvePointerChain(actorModelBase, Offsets.actorModelPhysicalDefense) + 0x10;
                     break;
                 case MonsterStats.PoisonAccumulation:
                     address = ResolvePointerChain(actorModelBase, Offsets.actorModelPoisonAccumulation) + 0x10;
@@ -922,8 +958,15 @@ namespace AILimitTool
             WriteUInt32(ResolvePointerChain(playerBase, Offsets.playerWeaponMain, Offsets.weaponDefine, Offsets.weaponLevelupItem, 0x10, 0x20) + 0x14, 0);
         }
 
+        private float regularWeaponDamage = 0;
+
+        private void OneShotEnemies_Toggle()
+        {
+
+        }
+
         //
-        // Player position stuff
+        // Player position code overwrites
         //
 
         readonly byte[] xPosOriginalCode = new byte[]  { 0x0F, 0x11, 0x81, 0xF0, 0x01, 0x00, 0x00 };        // movups [rcx+000001F0],xmm0
@@ -952,7 +995,7 @@ namespace AILimitTool
         }
 
         // Overwrites code that sets the player position before writing new position.
-        // Sets new location, waits so that the engine doesn't immediately overwrite it, then changes the code back
+        // Sets new location, waits so that the engine doesn't immediately overwrite it, then changes the code back.
         private void SetPlayerPositionThread(IntPtr address, double x, double y, double z)
         {
             WriteMemory(xPosCodeAddress, EmptyCode(7));
@@ -966,6 +1009,34 @@ namespace AILimitTool
 
             WriteMemory(xPosCodeAddress, xPosOriginalCode);
             WriteMemory(zPosCodeAddress, zPosOriginalCode);
+        }
+
+        readonly byte[] infiniteConsumablesOriginalCode = new byte[] { 0x89, 0x41, 0x14 };        // mov [rcx+14],eax
+        //readonly byte[] damageEnemyOriginalCode = new byte[] { 0xF3, 0x0F, 0x11, 0x49, 0x10 };        // movss [rcx+10],xmm1
+        //readonly byte[] damageEnemyUpdatedCode = new byte[] { 0x48, 0x0F, 0x11, 0x49, 0x10 };        // test stuff
+
+        //
+        // Other code overwrites
+        //
+
+        public void SetInfiniteConsumables(bool state)
+        {
+            if (state)
+                WriteMemory(infiniteConsumablesCodeAddress, EmptyCode(3));
+            else
+                WriteMemory(infiniteConsumablesCodeAddress, infiniteConsumablesOriginalCode);
+        }
+
+        readonly byte[] passiveEnemiesOriginalCode = new byte[] { 0x48, 0x89, 0xBB, 0x30, 0x01, 0x00, 0x00 };   // mov [rbx+00000130],rdi
+
+        // Overwrites the code that sets the target field of a monster.
+        // Can be a bit jank. Find a better way.
+        public void SetPassiveEnemies(bool state)
+        {
+            if (state)
+                WriteMemory(passiveEnemiesCodeAddress, EmptyCode(7));
+            else
+                WriteMemory(passiveEnemiesCodeAddress, passiveEnemiesOriginalCode);
         }
 
         //

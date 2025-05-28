@@ -20,13 +20,15 @@ namespace AILimitTool
         public List<int> sectionAddress = new List<int>();
         public List<int> sectionSize = new List<int>();
         public List<byte[]> sectionData = new List<byte[]>();
+        IntPtr moduleBaseAddress = IntPtr.Zero;
 
         bool disposed = false;
 
-        public AOBScanner(IntPtr processHandle, IntPtr baseAddress, int size)
+        public AOBScanner(IntPtr processHandle, IntPtr baseAddress, string sectionName)
         {
             byte[] buffer = new byte[0x600];
             uint bytesRead = 0;
+            moduleBaseAddress = baseAddress;
 
             NtReadVirtualMemory(processHandle, baseAddress, buffer, 0x600, ref bytesRead);
 
@@ -37,7 +39,7 @@ namespace AILimitTool
 
                 foreach (var section in headers.SectionHeaders)
                 {
-                    if (section.Name == ".text")
+                    if (section.Name == sectionName)
                     {
                         sectionAddress.Add(section.VirtualAddress);
                         sectionSize.Add(section.SizeOfRawData);
@@ -61,6 +63,7 @@ namespace AILimitTool
 
             if (disposing)
             {
+                Debug.Print("Disposing");
                 sectionAddress.Clear();
                 sectionAddress = null;
                 sectionSize.Clear();
@@ -71,33 +74,26 @@ namespace AILimitTool
             disposed = true;
         }
 
-        public int FindAddress(string patternSource, int section, int startOffset = 0, int offsetResult = 0, int chainOffset = 0)
+        //public int FindAddress(string patternSource, int section, int startOffset = 0, int offsetResult = 0, int chainOffset = 0)
+        public IntPtr FindAddress(string patternSource, int section = 0, int startOffset = 0, int offsetResult = 0)
         {
             if (section >= sectionAddress.Count)
-            { return -1; }
+                return IntPtr.Zero;
 
             (byte, bool)[] searchPattern = ConvertSearchStringToBytes(patternSource);
 
-            IntPtr currentAddress = IntPtr.Zero;
-            int indexResult = -1;
-
-            indexResult = ScanMemory(searchPattern, section, startOffset);
+            int indexResult = ScanMemory(searchPattern, section, startOffset);
 
             if (indexResult != -1)
-            {
-                if (chainOffset != 0 && offsetResult == 0)
-                { indexResult = BitConverter.ToInt32(sectionData[section], indexResult + chainOffset); }
-                else if (chainOffset != 0 && offsetResult != 0)
-                { indexResult += BitConverter.ToInt32(sectionData[section], indexResult + chainOffset) + offsetResult + sectionAddress[section]; }
-                else
-                { indexResult += sectionAddress[section] + offsetResult; }
-            }
-            return indexResult;
+                return indexResult + sectionAddress[section] + offsetResult;
+            //return moduleBaseAddress + indexResult + sectionAddress[section] + offsetResult;
+            return IntPtr.Zero;
         }
 
+        // Not implemented yet, not needed currently
         public IntPtr FindCodeCave(int length, string pattern = "FF")
         {
-            return 0x0;
+            return IntPtr.Zero;
         }
 
         private (byte, bool)[] ConvertSearchStringToBytes(string patternSource)
@@ -108,7 +104,9 @@ namespace AILimitTool
             for (int i = 0; i < splitPattern.Length; i++)
             {
                 if (splitPattern[i].Contains("?"))
-                { searchPattern[i] = (0x0, true); }
+                {
+                    searchPattern[i] = (0x0, true);
+                }
                 else
                 {
                     try
@@ -127,7 +125,7 @@ namespace AILimitTool
 
         private int ScanMemory((byte patternByte, bool isWildcard)[] searchPattern, int section, int startOffset)
         {
-
+            
 
             for (int i = startOffset;
                   i <= (sectionSize[section] - searchPattern.Length);

@@ -110,6 +110,7 @@ namespace AILimitTool
             { "PlayerSpeed",        GameOptions.PlayerSpeed },
             { "TargetInfo",         GameOptions.TargetInfo },
             { "InfiniteDew",        GameOptions.InfiniteDew },
+            { "PassiveEnemies",     GameOptions.PassiveEnemies },
             { "AddCrystals",        GameOptions.AddCrystals },
             { "TeleportQucksave",   GameOptions.TeleportQucksave },
             { "TeleportQuickload",  GameOptions.TeleportQuickload },

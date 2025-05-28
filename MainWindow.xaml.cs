@@ -104,6 +104,8 @@ public partial class MainWindow : Window, IDisposable
         comboNucleus.ItemsSource = nucleusStoreIDs;
         comboGeneral.ItemsSource = generalStoreIDs;
 
+        //listboxHotkeys.ItemsSource = hotkeyNameList;
+
         uiTimer.Tick += uiTimer_Tick;
         uiTimer.Interval = TimeSpan.FromMilliseconds(100);
         uiTimer.Start();
@@ -318,6 +320,9 @@ public partial class MainWindow : Window, IDisposable
             case (uint)GameOptions.InfiniteDew:
                 checkboxInfiniteDew.IsChecked = !checkboxInfiniteDew.IsChecked;
                 break;
+            case (uint)GameOptions.PassiveEnemies:
+                checkboxPassiveEnemies.IsChecked = !checkboxPassiveEnemies.IsChecked;
+                break;
 
             case (uint)GameOptions.TargetInfo:
                 checkboxTargetInfo.IsChecked = !checkboxTargetInfo.IsChecked;
@@ -368,6 +373,8 @@ public partial class MainWindow : Window, IDisposable
                     textPlayerSpeed_Hotkey.Text = $" ({hotkeyText})"; break;
                 case GameOptions.InfiniteDew:
                     textInfiniteDew_Hotkey.Text = $" ({hotkeyText})"; break;
+                case GameOptions.PassiveEnemies:
+                    textPassiveEnemies_Hotkey.Text = $" ({hotkeyText})"; break;
 
                 case GameOptions.TargetInfo:
                     textTargetInfo_Hotkey.Text = $" ({hotkeyText})"; break;
@@ -533,7 +540,8 @@ public partial class MainWindow : Window, IDisposable
 
     private void InfiniteDew_Toggle(object sender, RoutedEventArgs e)
     {
-        AILimit.InfiniteDew((bool)checkboxInfiniteDew.IsChecked);
+        //AILimit.InfiniteDew((bool)checkboxInfiniteDew.IsChecked);
+        AILimit.SetInfiniteConsumables((bool)checkboxInfiniteDew.IsChecked);
         UpdateStatusBar("Infinite healing dew: " + checkboxInfiniteDew.IsChecked.ToString());
     }
 
@@ -545,6 +553,18 @@ public partial class MainWindow : Window, IDisposable
             AILimit.RemoveGameOption(GameOptions.FreeUpgrade);
 
         UpdateStatusBar("Free weapon upgrades: " + checkboxFreeUpgrades.IsChecked.ToString());
+    }
+
+    private void PassiveEnemies_Toggle(object sender, RoutedEventArgs e)
+    {
+        AILimit.SetPassiveEnemies((bool)checkboxPassiveEnemies.IsChecked);
+        UpdateStatusBar("Passive enemies: " + checkboxPassiveEnemies.IsChecked.ToString());
+    }
+
+    private void OneShotEnemies_Toggle(object sender, RoutedEventArgs e)
+    {
+        //AILimit.SetOneShotEnemies((bool)checkboxOneShotEnemies.IsChecked);
+        //UpdateStatusBar("Passive enemies: " + checkboxOneShotEnemies.IsChecked.ToString());
     }
 
     private void LockTargetHP_Toggle(object sender, RoutedEventArgs e)
@@ -1509,4 +1529,38 @@ public partial class MainWindow : Window, IDisposable
         catch (Exception f)
         { }
     }
+
+    private Dictionary<string, GameOptions> hotkeyNameList = new Dictionary<string, GameOptions>()
+    {
+        { "Player Immortal",        GameOptions.Immortal },
+        { "Lock Target HP",         GameOptions.LockTargetHP },
+        { "Lock Sync",              GameOptions.LockSync },
+        { "Player Speed",           GameOptions.PlayerSpeed },
+        { "Show Target Info",       GameOptions.TargetInfo },
+        { "Infinite Dew",           GameOptions.InfiniteDew },
+        { "Add Crystals",           GameOptions.AddCrystals },
+        { "Teleport Qucksave",      GameOptions.TeleportQucksave },
+        { "Teleport Quickload",     GameOptions.TeleportQuickload },
+        { "Next Tab",               GameOptions.NextTab }
+    };
+
+    /* not implemented yet    
+    private void LabelHotkeyButtons()
+    {
+
+    }
+
+    
+    private void SetHotkey(object sender, RoutedEventArgs e)
+    {
+        Button button = sender as Button;
+        KeyValuePair<string, GameOptions> paira = (KeyValuePair<string, GameOptions>)button.DataContext;
+        MessageBox.Show(paira.Key.ToString());
+
+        foreach (KeyValuePair<string, GameOptions> pair in listboxHotkeys.Items)
+        {
+
+        }
+
+    }*/
 }
