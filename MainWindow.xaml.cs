@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
@@ -20,9 +21,6 @@ using static AILimitTool.AILimitLink;
 
 namespace AILimitTool;
 
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
 public partial class MainWindow : Window, IDisposable
 {
     AILimitLink AILimit;
@@ -45,6 +43,8 @@ public partial class MainWindow : Window, IDisposable
         Loaded += WindowLoaded;
 
         AILimit = new AILimitLink();
+
+        DisableTabs(true);
 
         InitialSetup();
         
@@ -69,7 +69,6 @@ public partial class MainWindow : Window, IDisposable
         }
         disposed = true;
     }
-
 
     void WindowClosed(object sender, EventArgs e)
     {
@@ -104,8 +103,6 @@ public partial class MainWindow : Window, IDisposable
         comboNucleus.ItemsSource = nucleusStoreIDs;
         comboGeneral.ItemsSource = generalStoreIDs;
 
-        //listboxHotkeys.ItemsSource = hotkeyNameList;
-
         uiTimer.Tick += uiTimer_Tick;
         uiTimer.Interval = TimeSpan.FromMilliseconds(100);
         uiTimer.Start();
@@ -115,7 +112,7 @@ public partial class MainWindow : Window, IDisposable
     // UI stuff
     //
 
-    private string GetAddressStateText(AddressTypes type)
+    private string GetAddressStateText(AddressType type)
     {
         IntPtr address = AILimit.GetAddress(type);
 
@@ -127,36 +124,46 @@ public partial class MainWindow : Window, IDisposable
         return "Not found";
     }
 
+    private bool waitingForLoadingScreenToEnd = false;
+
     private void uiTimer_Tick(object sender, EventArgs e)
     {
+
+        if (AILimit.ConnectionStatus != ConnectionState.Connected)
+            uiTimer.Stop();
+
         // TODO: Replace checking the variables directly with a method that reports current link state
-        if (!AILimit.linkActive)
+        if (AILimit.ConnectionStatus == ConnectionState.ProcessNotFound)
         {
             this.Title = "AI Limit Tool - game not found";
             textError.Text = "Game not found. Attempting to find AI Limit process. If the game is open, please try restarting.";
             textAddressStatus.Text = "";
             DisableTabs(true);
         }
-        else if (!AILimit.modulesFound)
-        {
-            this.Title = "AI Limit Tool - searching for modules";
-            textError.Text = "AI Limit process found. Searching for modules. If this does not resolve within a few seconds, please try restarting.";
-
-            textAddressStatus.Text = "GameAssembly.dll: " + GetAddressStateText(AddressTypes.ArchiveData) + "\n"
-                                + "UnityPlayer.dll: " + GetAddressStateText(AddressTypes.UnityPlayer);
-        }
-        else if (!AILimit.mainObjectsFound)
+        else if (AILimit.ConnectionStatus == ConnectionState.ConnectedOffsetsNotFound)
         {
             this.Title = "AI Limit Tool - searching for offsets";
             textError.Text = "AI Limit process found. Attempting to find offsets. This step cannot be completed until a save game is loaded. If game is loaded, please try restarting.";
 
-            textAddressStatus.Text = "ArchiveData: " + GetAddressStateText(AddressTypes.ArchiveData) + "\n"
-                                + "Player: " + GetAddressStateText(AddressTypes.Player) + "\n"
-                                + "LoadingView: " + GetAddressStateText(AddressTypes.LoadingView) + "\n"
-                                + "LevelRoot: " + GetAddressStateText(AddressTypes.LevelRoot) + "\n"
-                                + "Transfer Destination: " + GetAddressStateText(AddressTypes.TransferDestination) + "\n"
-                                + "Timer: " + GetAddressStateText(AddressTypes.Timer);
+            textAddressStatus.Text = "ArchiveData: " + GetAddressStateText(AddressType.ArchiveData) + "\n"
+                                + "Player: " + GetAddressStateText(AddressType.Player) + "\n"
+                                + "LoadingView: " + GetAddressStateText(AddressType.CurrentView) + "\n"
+                                + "LevelRoot: " + GetAddressStateText(AddressType.LevelRoot) + "\n"
+                                + "Transfer Destination: " + GetAddressStateText(AddressType.TransferDestination) + "\n"
+                                + "Timer: " + GetAddressStateText(AddressType.Timer);
 
+            DisableTabs(true);
+        }
+        else if (AILimit.ConnectionStatus == ConnectionState.NotConnected)
+        {
+            this.Title = "AI Limit Tool - not connected";
+            textError.Text = "Not connected";
+            textAddressStatus.Text = "ArchiveData: " + GetAddressStateText(AddressType.ArchiveData) + "\n"
+                                + "Player: " + GetAddressStateText(AddressType.Player) + "\n"
+                                + "LoadingView: " + GetAddressStateText(AddressType.CurrentView) + "\n"
+                                + "LevelRoot: " + GetAddressStateText(AddressType.LevelRoot) + "\n"
+                                + "Transfer Destination: " + GetAddressStateText(AddressType.TransferDestination) + "\n"
+                                + "Timer: " + GetAddressStateText(AddressType.Timer);
             DisableTabs(true);
         }
 
@@ -191,15 +198,21 @@ public partial class MainWindow : Window, IDisposable
                 UpdateTargetDisplay();
 
             if (AILimit.IsLoadingScreenActive())
+                waitingForLoadingScreenToEnd = true;
+            else if (waitingForLoadingScreenToEnd)
+            {
+                waitingForLoadingScreenToEnd = false;
                 UpdateTeleportTab();
+            }
+
         }
         else
         {
-            if (AILimit.linkActive && AILimit.mainObjectsFound)
+            if (AILimit.ConnectionStatus == ConnectionState.Connected)
             {
                 uiActive = true;
                 InitUI();
-                this.Title = "AI Limit Tool";   
+                this.Title = "AI Limit Tool";
             }
         }
     }
@@ -277,27 +290,22 @@ public partial class MainWindow : Window, IDisposable
 
     private void DisableTabs(bool disable)
     {
+        tabMain.IsEnabled = !disable;
+        tabStats.IsEnabled = !disable;
+        tabTeleport.IsEnabled = !disable;
+        tabItems.IsEnabled = !disable;
+        tabStates.IsEnabled = !disable;
         uiActive = !disable;
 
         if (disable)
         {
             tabError.Visibility = Visibility.Visible;
             tabcontrolMain.SelectedIndex = (int)TabItems.Error;
-            tabMain.IsEnabled = false;
-            tabStats.IsEnabled = false;
-            tabTeleport.IsEnabled = false;
-            tabItems.IsEnabled = false;
-            tabStates.IsEnabled = false;
         }
         else
         {
             tabError.Visibility = Visibility.Hidden;
             tabcontrolMain.SelectedIndex = 0;
-            tabMain.IsEnabled = true;
-            tabStats.IsEnabled = true;
-            tabTeleport.IsEnabled = true;
-            tabItems.IsEnabled = true;
-            tabStates.IsEnabled = true;
         }
     }
 
@@ -329,7 +337,7 @@ public partial class MainWindow : Window, IDisposable
                 break;
 
             case (uint)GameOptions.AddCrystals:
-                AddCrystals(int.Parse(textboxAddCrystals.Text));
+                AddCrystals(uint.Parse(textboxAddCrystals.Text));
                 break;
             
             case (uint)GameOptions.TeleportQucksave:
@@ -507,15 +515,15 @@ public partial class MainWindow : Window, IDisposable
 
     void PopulateStatsTab()
     {
-        textboxPlayerLevel.Text = AILimit.SetPlayerStats(PlayerStats.PlayerLevel).ToString();
+        textboxPlayerLevel.Text = AILimit.GetPlayerStat(PlayerStats.PlayerLevel).ToString();
 
-        textboxLife.Text = AILimit.SetPlayerStats(PlayerStats.Life).ToString();
-        textboxVitality.Text = AILimit.SetPlayerStats(PlayerStats.Vitality).ToString();
-        textboxStrength.Text = AILimit.SetPlayerStats(PlayerStats.Strength).ToString();
-        textboxTechnique.Text = AILimit.SetPlayerStats(PlayerStats.Technique).ToString();
-        textboxSpirit.Text = AILimit.SetPlayerStats(PlayerStats.Spirit).ToString();
+        textboxLife.Text = AILimit.GetPlayerStat(PlayerStats.Life).ToString();
+        textboxVitality.Text = AILimit.GetPlayerStat(PlayerStats.Vitality).ToString();
+        textboxStrength.Text = AILimit.GetPlayerStat(PlayerStats.Strength).ToString();
+        textboxTechnique.Text = AILimit.GetPlayerStat(PlayerStats.Technique).ToString();
+        textboxSpirit.Text = AILimit.GetPlayerStat(PlayerStats.Spirit).ToString();
 
-        textboxCrystals.Text = AILimit.SetPlayerStats(PlayerStats.Crystals).ToString();
+        textboxCrystals.Text = AILimit.GetPlayerStat(PlayerStats.Crystals).ToString();
     }
 
     //
@@ -525,26 +533,23 @@ public partial class MainWindow : Window, IDisposable
     private void PlayerImmortal_Toggle(object sender, RoutedEventArgs e)
     {
         if (AILimit.TogglePlayerBools(GameOptions.Immortal, (bool)checkboxPlayerImmortal.IsChecked))
-        {
             UpdateStatusBar("Player immortal: " + checkboxPlayerImmortal.IsChecked.ToString());
-        }
+
     }
 
     private void LockSync_Toggle(object sender, RoutedEventArgs e)
     {
         if (AILimit.TogglePlayerBools(GameOptions.LockSync, (bool)checkboxLockSync.IsChecked))
-        {
             UpdateStatusBar("Player sync locked: " + checkboxPlayerImmortal.IsChecked.ToString());
-        }
     }
 
     private void InfiniteDew_Toggle(object sender, RoutedEventArgs e)
     {
-        //AILimit.InfiniteDew((bool)checkboxInfiniteDew.IsChecked);
         AILimit.SetInfiniteConsumables((bool)checkboxInfiniteDew.IsChecked);
-        UpdateStatusBar("Infinite healing dew: " + checkboxInfiniteDew.IsChecked.ToString());
+        UpdateStatusBar("Infinite consumables: " + checkboxInfiniteDew.IsChecked.ToString());
     }
 
+    // TODO: Extreme jank. Find a better way.
     private void FreeWeaponUpgrades_Toggle(object sender, RoutedEventArgs e)
     {
         if ((bool)checkboxFreeUpgrades.IsChecked)
@@ -559,12 +564,6 @@ public partial class MainWindow : Window, IDisposable
     {
         AILimit.SetPassiveEnemies((bool)checkboxPassiveEnemies.IsChecked);
         UpdateStatusBar("Passive enemies: " + checkboxPassiveEnemies.IsChecked.ToString());
-    }
-
-    private void OneShotEnemies_Toggle(object sender, RoutedEventArgs e)
-    {
-        //AILimit.SetOneShotEnemies((bool)checkboxOneShotEnemies.IsChecked);
-        //UpdateStatusBar("Passive enemies: " + checkboxOneShotEnemies.IsChecked.ToString());
     }
 
     private void LockTargetHP_Toggle(object sender, RoutedEventArgs e)
@@ -645,9 +644,7 @@ public partial class MainWindow : Window, IDisposable
     private void RespawnAllBosses(object sender, RoutedEventArgs e)
     {
         foreach (KeyValuePair<string, Boss> entry in bossList)
-        {
             RespawnBoss(entry.Value);
-        }
     }
 
     private void RespawnBoss(Boss boss)
@@ -670,13 +667,10 @@ public partial class MainWindow : Window, IDisposable
     private void QuicksavePlayerPosition(double x = 0xFFFFFFFF, double y = 0xFFFFFFFF, double z = 0xFFFFFFFF, bool updateStatusBar = true)
     {
         if (x == 0xFFFFFFFF)
-        {
             savedPlayerPosition = AILimit.GetPlayerPosition();
-        }
         else
-        {
             savedPlayerPosition = (x, y, z);
-        }
+
         textSavedPosition.Text = "Saved position: x" + savedPlayerPosition.x.ToString("N2") + " y" + savedPlayerPosition.y.ToString("N2") + " z" + savedPlayerPosition.z.ToString("N2");
 
         if (updateStatusBar)
@@ -697,13 +691,12 @@ public partial class MainWindow : Window, IDisposable
     private void SavePlayerPosition(object sender, RoutedEventArgs e)
     {
         string description = Microsoft.VisualBasic.Interaction.InputBox("Description", "Enter description for location");
-        if (string.IsNullOrEmpty(description)) { return; }
+        if (string.IsNullOrEmpty(description))
+            return;
 
         TeleportDestination destination = new TeleportDestination();
 
         (double x, double y, double z) position = AILimit.GetPlayerPosition();
-
-        Debug.Print(position.ToString());
 
         destination.Description = description;
         destination.x = position.x;
@@ -750,34 +743,35 @@ public partial class MainWindow : Window, IDisposable
 
     private void SetPlayerStats(object sender, RoutedEventArgs e)
     {
-        AILimit.SetPlayerStats(PlayerStats.PlayerLevel, int.Parse(textboxPlayerLevel.Text));
-        AILimit.SetPlayerStats(PlayerStats.Life, int.Parse(textboxLife.Text));
-        AILimit.SetPlayerStats(PlayerStats.Vitality, int.Parse(textboxVitality.Text));
-        AILimit.SetPlayerStats(PlayerStats.Strength, int.Parse(textboxStrength.Text));
-        AILimit.SetPlayerStats(PlayerStats.Technique, int.Parse(textboxTechnique.Text));
-        AILimit.SetPlayerStats(PlayerStats.Spirit, int.Parse(textboxSpirit.Text));
+        AILimit.SetPlayerStat(PlayerStats.PlayerLevel, uint.Parse(textboxPlayerLevel.Text));
+        AILimit.SetPlayerStat(PlayerStats.Life, uint.Parse(textboxLife.Text));
+        AILimit.SetPlayerStat(PlayerStats.Vitality, uint.Parse(textboxVitality.Text));
+        AILimit.SetPlayerStat(PlayerStats.Strength, uint.Parse(textboxStrength.Text));
+        AILimit.SetPlayerStat(PlayerStats.Technique, uint.Parse(textboxTechnique.Text));
+        AILimit.SetPlayerStat(PlayerStats.Spirit, uint.Parse(textboxSpirit.Text));
 
         UpdateStatusBar("Player stats set");
     }
 
     private void SetCrystals(object sender, RoutedEventArgs e)
     {
-        AILimit.SetPlayerStats(PlayerStats.Crystals, int.Parse(textboxCrystals.Text));
+        AILimit.SetPlayerStat(PlayerStats.Crystals, uint.Parse(textboxCrystals.Text));
         UpdateStatusBar("Crystals set to " + int.Parse(textboxCrystals.Text));
     }
 
     private void AddCrystals(object sender, RoutedEventArgs e)
     {
-        AddCrystals(int.Parse(textboxAddCrystals.Text));
+        AddCrystals(uint.Parse(textboxAddCrystals.Text));
     }
 
-    private void AddCrystals(int crystals)
+    private void AddCrystals(uint crystals)
     {
-        
-        uint totalCrystals = AILimit.SetPlayerStats(PlayerStats.Crystals, crystals, true);
+        AILimit.SetPlayerStat(PlayerStats.Crystals, crystals, true);
+
+        uint totalCrystals = AILimit.GetPlayerStat(PlayerStats.Crystals);
 
         UpdateStatusBar("Added " + int.Parse(textboxAddCrystals.Text) + " crystals, new total " + totalCrystals);
-        textboxCrystals.Text = crystals.ToString();
+        textboxCrystals.Text = totalCrystals.ToString();
         return;
     }
 
@@ -1079,13 +1073,11 @@ public partial class MainWindow : Window, IDisposable
             case ItemCategories.Seal:
                 itemID = ((KeyValuePair<string, uint>)comboSeal.SelectedItem).Value;
                 itemName = ((KeyValuePair<string, uint>)comboSeal.SelectedItem).Key;
-                Debug.Print(itemID + "");
                 if (itemID > 1009 && itemID < 2000) // These are seals that have upgrade levels, except for the base seal ID 1000, which cannot be upgraded
                 {
                     itemID += (uint)comboSealLevel.SelectedIndex;
                     itemName += " +" + (uint)comboSealLevel.SelectedIndex;
                 }
-                Debug.Print(itemID + "");
                 break;
             case ItemCategories.Helmet:
                 itemID = ((KeyValuePair<string, uint>)comboHelmet.SelectedItem).Value;
@@ -1201,7 +1193,7 @@ public partial class MainWindow : Window, IDisposable
     private void SetWarpPoint(object sender, RoutedEventArgs e)
     {
         KeyValuePair<string, uint> selectedDestination = (KeyValuePair<string, uint>)comboDestinations.SelectedItem;
-        AILimit.SetTransferDestination((int)selectedDestination.Value);
+        AILimit.SetPlayerStat(PlayerStats.TransferDestination, selectedDestination.Value);
         UpdateStatusBar("Broken branch destination set to " + selectedDestination.Value);
     }
 
@@ -1247,7 +1239,6 @@ public partial class MainWindow : Window, IDisposable
             {
                 while ((line = sr.ReadLine()) != null)
                 {
-                    Debug.Print(line);
                     if (line[0] == '!')
                     {
                         level = Convert.ToInt32(line.Substring(1));
