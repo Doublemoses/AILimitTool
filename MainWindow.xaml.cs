@@ -30,7 +30,7 @@ public partial class MainWindow : Window, IDisposable
     TargetDisplay targetDisplay = new TargetDisplay();
 
     bool disposed = false;
-
+    bool hotkeysEnabled = true;
     bool uiActive = false;
 
     public MainWindow()
@@ -116,8 +116,6 @@ public partial class MainWindow : Window, IDisposable
     {
         IntPtr address = AILimit.GetAddress(type);
 
-        string returnText = "";
-
         if (address > 0x100000)
             return address.ToString("X");
 
@@ -125,47 +123,45 @@ public partial class MainWindow : Window, IDisposable
     }
 
     private bool waitingForLoadingScreenToEnd = false;
+    private ConnectionState lastConnectionStatus = ConnectionState.Connected;
 
     private void uiTimer_Tick(object sender, EventArgs e)
     {
-
-        if (AILimit.ConnectionStatus != ConnectionState.Connected)
-            uiTimer.Stop();
-
-        // TODO: Replace checking the variables directly with a method that reports current link state
-        if (AILimit.ConnectionStatus == ConnectionState.ProcessNotFound)
+        if (AILimit.ConnectionStatus != lastConnectionStatus)
         {
-            this.Title = "AI Limit Tool - game not found";
-            textError.Text = "Game not found. Attempting to find AI Limit process. If the game is open, please try restarting.";
-            textAddressStatus.Text = "";
-            DisableTabs(true);
+            // TODO: Check if other states should have custom messages. Most likely not since connection system rework.
+            if (AILimit.ConnectionStatus == ConnectionState.NotConnected)
+            {
+                uiTimer.Interval = TimeSpan.FromMilliseconds(1000);
+                DisableTabs(true);
+                this.Title = "AI Limit Tool - Not connected";
+                textError.Text = "Not connected";
+                textAddressStatus.Text = "AI Limit process not found. Scanning.";
+            }
+
+            if (AILimit.ConnectionStatus == ConnectionState.ConnectedOffsetsNotFound)
+            {
+                this.Title = "AI Limit Tool - Scanning for addresses";
+
+                GameVersion version = AILimit.IdentifyGameVersion();
+
+                if (version == GameVersion.vNotFound)
+                    textError.Text = "AI Limit process found. Attempting to find addresses. Unable to identify version - this program may need to be updated.";
+                else
+                    textError.Text = $"AI Limit process found, game version {version.ToString().Replace('_', '.')}. Attempting to find addresses.";
+            }
         }
-        else if (AILimit.ConnectionStatus == ConnectionState.ConnectedOffsetsNotFound)
-        {
-            this.Title = "AI Limit Tool - searching for offsets";
-            textError.Text = "AI Limit process found. Attempting to find offsets. This step cannot be completed until a save game is loaded. If game is loaded, please try restarting.";
 
-            textAddressStatus.Text = "ArchiveData: " + GetAddressStateText(AddressType.ArchiveData) + "\n"
-                                + "Player: " + GetAddressStateText(AddressType.Player) + "\n"
-                                + "LoadingView: " + GetAddressStateText(AddressType.CurrentView) + "\n"
-                                + "LevelRoot: " + GetAddressStateText(AddressType.LevelRoot) + "\n"
-                                + "Transfer Destination: " + GetAddressStateText(AddressType.TransferDestination) + "\n"
+        if (AILimit.ConnectionStatus == ConnectionState.ConnectedOffsetsNotFound)
+        {
+            textAddressStatus.Text = "ArchiveData: " + GetAddressStateText(AddressType.ArchiveDataRaw) + "\n"
+                                + "Player: " + GetAddressStateText(AddressType.PlayerRaw) + "\n"
+                                + "LoadingView: " + GetAddressStateText(AddressType.CurrentViewRaw) + "\n"
+                                + "LevelRoot: " + GetAddressStateText(AddressType.LevelRootRaw) + "\n"
                                 + "Timer: " + GetAddressStateText(AddressType.Timer);
+        }
 
-            DisableTabs(true);
-        }
-        else if (AILimit.ConnectionStatus == ConnectionState.NotConnected)
-        {
-            this.Title = "AI Limit Tool - not connected";
-            textError.Text = "Not connected";
-            textAddressStatus.Text = "ArchiveData: " + GetAddressStateText(AddressType.ArchiveData) + "\n"
-                                + "Player: " + GetAddressStateText(AddressType.Player) + "\n"
-                                + "LoadingView: " + GetAddressStateText(AddressType.CurrentView) + "\n"
-                                + "LevelRoot: " + GetAddressStateText(AddressType.LevelRoot) + "\n"
-                                + "Transfer Destination: " + GetAddressStateText(AddressType.TransferDestination) + "\n"
-                                + "Timer: " + GetAddressStateText(AddressType.Timer);
-            DisableTabs(true);
-        }
+        lastConnectionStatus = AILimit.ConnectionStatus;
 
         if (uiActive)
         {
@@ -194,6 +190,7 @@ public partial class MainWindow : Window, IDisposable
                 }
             }
 
+            // TODO: Interval set to 100ms to keep target view window looking smooth. Maybe give the target window its own timer and potentially reduce refresh rate of this one.
             if (targetDisplay.Visibility == Visibility.Visible)
                 UpdateTargetDisplay();
 
@@ -210,8 +207,8 @@ public partial class MainWindow : Window, IDisposable
         {
             if (AILimit.ConnectionStatus == ConnectionState.Connected)
             {
-                uiActive = true;
                 InitUI();
+                uiTimer.Interval = TimeSpan.FromMilliseconds(100);
                 this.Title = "AI Limit Tool";
             }
         }
@@ -311,6 +308,9 @@ public partial class MainWindow : Window, IDisposable
 
     public void ActionHotkey(uint option)
     {
+        if (!hotkeysEnabled) // TODO: Disable hotkey manager when hotkeys are disabled
+            return;
+
         switch (option)
         {
             case (uint)GameOptions.Immortal:
@@ -421,20 +421,35 @@ public partial class MainWindow : Window, IDisposable
 
     private void CalculatePlayerLevel(object sender, KeyEventArgs e)
     {
+        CalculatePlayerLevel();
+    }
+
+    private void CalculatePlayerLevel()
+    {
         if ((bool)checkboxCalculatePlayerLevel.IsChecked)
         {
-            int finalValue = int.Parse(textboxLife.Text);
-            finalValue += int.Parse(textboxVitality.Text);
-            finalValue += int.Parse(textboxStrength.Text);
-            finalValue += int.Parse(textboxTechnique.Text);
-            finalValue += int.Parse(textboxSpirit.Text);
-            finalValue -= 49;
+            int.TryParse(textboxLife.Text, out int life);
+            int.TryParse(textboxVitality.Text, out int vit);
+            int.TryParse(textboxStrength.Text, out int str);
+            int.TryParse(textboxTechnique.Text, out int tec);
+            int.TryParse(textboxSpirit.Text, out int spt);
+
+            int finalValue = ValidateStatLevel(life) + ValidateStatLevel(vit) + ValidateStatLevel(str) + ValidateStatLevel(tec) + ValidateStatLevel(spt) - 49;
+
             if (finalValue < 1)
-            {
                 finalValue = 1;
-            }
+
             textboxPlayerLevel.Text = finalValue.ToString();
         }
+    }
+
+    private int ValidateStatLevel(int stat)
+    {
+        if (stat > 99)
+            return 99;
+        if (stat < 1)
+            return 1;
+        return stat;
     }
 
     private void TextBox_VerifyNumeric(object sender, TextCompositionEventArgs e)
@@ -490,13 +505,11 @@ public partial class MainWindow : Window, IDisposable
         }
 
         if (stat < 1)
-        {
             (sender as TextBox).Text = "1";
-        }
         else if (stat > 99)
-        {
             (sender as TextBox).Text = "99";
-        }
+
+        CalculatePlayerLevel();
     }
 
     //
@@ -588,7 +601,9 @@ public partial class MainWindow : Window, IDisposable
 
         if ((bool)checkboxPlayerSpeed.IsChecked)
         {
-            speed = Convert.ToSingle(textboxMovementSpeed.Text);
+            if (!float.TryParse(textboxMovementSpeed.Text, out speed))
+                speed = 50;
+
             textboxMovementSpeed.IsEnabled = false;
         }
         AILimit.SetPlayerSpeed(speed);
@@ -603,6 +618,12 @@ public partial class MainWindow : Window, IDisposable
             targetDisplay.Show();
         else
             targetDisplay.Hide();
+    }
+
+    private void HotkeysEnabled_Toggle(object sender, RoutedEventArgs e)
+    {
+        hotkeysEnabled = (bool)checkboxHotkeysEnabled.IsChecked;
+        UpdateStatusBar("Hotkeys enabled: " + checkboxHotkeysEnabled.IsChecked.ToString());
     }
 
 
@@ -735,33 +756,49 @@ public partial class MainWindow : Window, IDisposable
         }
     }
 
-
-
     //
     // STATS TAB
     //
 
     private void SetPlayerStats(object sender, RoutedEventArgs e)
     {
-        AILimit.SetPlayerStat(PlayerStats.PlayerLevel, uint.Parse(textboxPlayerLevel.Text));
-        AILimit.SetPlayerStat(PlayerStats.Life, uint.Parse(textboxLife.Text));
-        AILimit.SetPlayerStat(PlayerStats.Vitality, uint.Parse(textboxVitality.Text));
-        AILimit.SetPlayerStat(PlayerStats.Strength, uint.Parse(textboxStrength.Text));
-        AILimit.SetPlayerStat(PlayerStats.Technique, uint.Parse(textboxTechnique.Text));
-        AILimit.SetPlayerStat(PlayerStats.Spirit, uint.Parse(textboxSpirit.Text));
+        bool pass = uint.TryParse(textboxPlayerLevel.Text, out uint lvl);
+        pass &= int.TryParse(textboxLife.Text, out int life);
+        pass &= int.TryParse(textboxVitality.Text, out int vit);
+        pass &= int.TryParse(textboxStrength.Text, out int str);
+        pass &= int.TryParse(textboxTechnique.Text, out int tec);
+        pass &= int.TryParse(textboxSpirit.Text, out int spt);
+
+        if (!pass)
+            return;
+
+        int finalValue =  + ValidateStatLevel(vit) + ValidateStatLevel(str) + ValidateStatLevel(tec) + ValidateStatLevel(spt) - 49;
+
+        AILimit.SetPlayerStat(PlayerStats.PlayerLevel, lvl);
+        AILimit.SetPlayerStat(PlayerStats.Life, (uint)ValidateStatLevel(life));
+        AILimit.SetPlayerStat(PlayerStats.Vitality, (uint)ValidateStatLevel(vit));
+        AILimit.SetPlayerStat(PlayerStats.Strength, (uint)ValidateStatLevel(str));
+        AILimit.SetPlayerStat(PlayerStats.Technique, (uint)ValidateStatLevel(tec));
+        AILimit.SetPlayerStat(PlayerStats.Spirit, (uint)ValidateStatLevel(spt));
 
         UpdateStatusBar("Player stats set");
     }
 
     private void SetCrystals(object sender, RoutedEventArgs e)
     {
-        AILimit.SetPlayerStat(PlayerStats.Crystals, uint.Parse(textboxCrystals.Text));
+        if (!uint.TryParse(textboxCrystals.Text, out uint value))
+            return;
+
+        AILimit.SetPlayerStat(PlayerStats.Crystals, value);
         UpdateStatusBar("Crystals set to " + int.Parse(textboxCrystals.Text));
     }
 
     private void AddCrystals(object sender, RoutedEventArgs e)
     {
-        AddCrystals(uint.Parse(textboxAddCrystals.Text));
+        if (!uint.TryParse(textboxAddCrystals.Text, out uint value))
+            return;
+
+        AddCrystals(value);
     }
 
     private void AddCrystals(uint crystals)
@@ -1267,9 +1304,9 @@ public partial class MainWindow : Window, IDisposable
                 }
             }
         }
-        catch (Exception e)
+        catch (Exception f)
         {
-            Debug.Print("Error: " + e.ToString());
+            Debug.Print("Error: " + f.ToString());
         }
 
         listboxTeleportDestinations.ItemsSource = teleportDestinations;
@@ -1382,6 +1419,9 @@ public partial class MainWindow : Window, IDisposable
 
     private void UpdateStatusBar(string newText)
     {
+        if (textLastCommand == null)
+            return;
+
         textLastCommand.Text = newText;
     }
     
@@ -1415,7 +1455,10 @@ public partial class MainWindow : Window, IDisposable
             // Teleport Tab
             sw.WriteLine("QuickPosition\t" + savedPlayerPosition.x + "\t" + savedPlayerPosition.y + "\t" + savedPlayerPosition.z);
 
-            
+            // Hotkeys enabled
+            sw.WriteLine("HotkeysEnabled\t" + ((bool)checkboxHotkeysEnabled.IsChecked ? "1" : "0"));
+
+
         }
     }
 
@@ -1469,6 +1512,17 @@ public partial class MainWindow : Window, IDisposable
 
                             case "QuickPosition":
                                 QuicksavePlayerPosition(double.Parse(split[1]), double.Parse(split[2]), double.Parse(split[3]), false);
+                                break;
+
+                            case "HotkeysEnabled":
+                                checkboxHotkeysEnabled.Checked -= HotkeysEnabled_Toggle;    // Disable event so it doesn't send message to status bar
+                                checkboxHotkeysEnabled.Unchecked -= HotkeysEnabled_Toggle;
+
+                                hotkeysEnabled = (split[1] == "1") ? true : false;
+                                checkboxHotkeysEnabled.IsChecked = hotkeysEnabled;
+
+                                checkboxHotkeysEnabled.Checked += HotkeysEnabled_Toggle;
+                                checkboxHotkeysEnabled.Unchecked += HotkeysEnabled_Toggle;
                                 break;
                         }
                     }
@@ -1534,24 +1588,4 @@ public partial class MainWindow : Window, IDisposable
         { "Teleport Quickload",     GameOptions.TeleportQuickload },
         { "Next Tab",               GameOptions.NextTab }
     };
-
-    /* not implemented yet    
-    private void LabelHotkeyButtons()
-    {
-
-    }
-
-    
-    private void SetHotkey(object sender, RoutedEventArgs e)
-    {
-        Button button = sender as Button;
-        KeyValuePair<string, GameOptions> paira = (KeyValuePair<string, GameOptions>)button.DataContext;
-        MessageBox.Show(paira.Key.ToString());
-
-        foreach (KeyValuePair<string, GameOptions> pair in listboxHotkeys.Items)
-        {
-
-        }
-
-    }*/
 }

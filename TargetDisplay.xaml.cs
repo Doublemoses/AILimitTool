@@ -15,9 +15,7 @@ using System.Windows.Shapes;
 
 namespace AILimitTool
 {
-    /// <summary>
-    /// Interaction logic for TargetDisplay.xaml
-    /// </summary>
+    
     public partial class TargetDisplay : Window
     {
         public bool shouldClose = false;

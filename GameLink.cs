@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Printing;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -199,7 +200,10 @@ namespace AILimitTool
 
             try
             {
-                Process nightreignProcess = Process.GetProcessById(gameProcess.Id);
+                Process process = Process.GetProcessById(gameProcess.Id);
+                if (process.HasExited)
+                    return false;
+
                 return true;
             }
             catch (Exception f)
@@ -239,6 +243,14 @@ namespace AILimitTool
             }
         }
 
+        public int[] Size
+        {
+            get
+            {
+                return moduleSize;
+            }
+        }
+
         public uint[] Version
         {
             get
@@ -265,9 +277,8 @@ namespace AILimitTool
             IntPtr pointer = (IntPtr)ReadUInt64(pointers[0]);
 
             for (int i = 1; i < pointers.Length; i++)
-            {
                 pointer = (IntPtr)ReadUInt64(pointer + pointers[i]);
-            }
+
             return pointer;
         }
 

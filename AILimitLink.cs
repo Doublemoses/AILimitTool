@@ -1,4 +1,6 @@
 ﻿using System.Diagnostics;
+using System.Net;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -90,15 +92,14 @@ namespace AILimitTool
 
     class AILimitLink : IDisposable
     {
-        private const uint PROCESS_ALL_ACCESS = 0x1F0FFF;               
         private const string processName = "ai-limit";
-
-        const ulong addressMinimum = 0x10000000000;
-        const ulong addressMaximum = 0x6FFFFFFFFFF;
 
         private ConnectionState connectionStatus = ConnectionState.NotConnected;
 
         private GameLink aiLimit;
+
+        const ulong addressMinimum = 0x10000000000;
+        const ulong addressMaximum = 0x6FFFFFFFFFF;
 
         System.Windows.Threading.DispatcherTimer monitorTimer = new System.Windows.Threading.DispatcherTimer();
 
@@ -109,7 +110,6 @@ namespace AILimitTool
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-
 
         protected virtual void Dispose(bool disposing)
         {
@@ -126,8 +126,13 @@ namespace AILimitTool
         {
             aiLimit = new GameLink(processName, new string[] { "gameassembly.dll", "unityplayer.dll" });
 
+            
+
             monitorTimer.Tick += monitorTimer_Tick;
-            monitorTimer.Interval = TimeSpan.FromMilliseconds(200);
+            monitorTimer.Interval = TimeSpan.FromMilliseconds(5000);
+
+            Update();
+
             monitorTimer.Start();
         }
 
@@ -135,18 +140,41 @@ namespace AILimitTool
 
         private void monitorTimer_Tick(object? sender, EventArgs e)
         {
+            Update();
+        }
+
+        private void Update()
+        {
             if (connectionStatus == ConnectionState.Connected && !aiLimit.CheckConnectionStatus())
             {
                 connectionStatus = ConnectionState.NotConnected;
-                monitorTimer.Interval = TimeSpan.FromMilliseconds(10000);
+                monitorTimer.Interval = TimeSpan.FromMilliseconds(5000);
+
+                archiveDataBase = IntPtr.Zero;
+                viewManagerBase = IntPtr.Zero;
+                levelLoadManagerBase = IntPtr.Zero;
+                playerBase = IntPtr.Zero;
+
+                archiveDataAddress = IntPtr.Zero;
+                playerAddress = IntPtr.Zero;
+                currentViewAddress = IntPtr.Zero;
+                levelRootAddress = IntPtr.Zero;
+
+                timerAddress = IntPtr.Zero;
+                xPosCodeAddress = IntPtr.Zero;
+                zPosCodeAddress = IntPtr.Zero;
+
+                infiniteConsumablesCodeAddress = IntPtr.Zero;
+                passiveEnemiesCodeAddress = IntPtr.Zero;
             }
 
             if (connectionStatus == ConnectionState.NotConnected)
             {
                 if (aiLimit.InitGameLink())
+                {
+                    Debug.Print("Process found");
                     connectionStatus = ConnectionState.ConnectedOffsetsNotFound;
-                else
-                    connectionStatus = ConnectionState.ProcessNotFound;
+                }
             }
 
             if (connectionStatus == ConnectionState.ConnectedOffsetsNotFound)
@@ -196,11 +224,18 @@ namespace AILimitTool
             UnityPlayer,
         }
 
+        // Intermediate storage for AOB results
         IntPtr archiveDataBase = IntPtr.Zero;
         IntPtr viewManagerBase = IntPtr.Zero;
         IntPtr levelLoadManagerBase = IntPtr.Zero;
         IntPtr playerBase = IntPtr.Zero;
-        
+
+        // Final address storage
+        IntPtr archiveDataAddress = IntPtr.Zero;
+        IntPtr playerAddress = IntPtr.Zero;
+        IntPtr currentViewAddress = IntPtr.Zero;
+        IntPtr levelRootAddress = IntPtr.Zero;
+
         IntPtr timerAddress = IntPtr.Zero;
         IntPtr xPosCodeAddress = IntPtr.Zero;
         IntPtr zPosCodeAddress = IntPtr.Zero;
@@ -211,83 +246,91 @@ namespace AILimitTool
         public GameVersion version = GameVersion.vNotFound;
         public Dictionary<uint, bool> addressFound = new Dictionary<uint, bool>();
 
-        public enum GameVersion
-        {
-            v1_0_020a, // three versions from release day
-            v1_0_020b, // I don't know the actual versions, so assuming 1.0.020 
-            v1_0_020c, // and added letters to separate different versions
-            v1_0_021,
-            v1_0_022,
-            v1_0_023,
-            vNotFound = 100,
-        }
+        
 
         // Seemingly not needed since adding AOBs. Delete?
-        private void IdentifyGameVersion()
+        public GameVersion IdentifyGameVersion()
         {
-            switch (aiLimit.BaseAddress[(int)Module.GameAssembly])
+            switch (aiLimit.Size[(int)Module.GameAssembly])
             {
                 case 79798272:
-                    version = GameVersion.v1_0_020b;
-                    break;
+                    return GameVersion.v1_0_020b;
                 case 79904768:
-                    version = GameVersion.v1_0_020c;
-                    break;
+                    return GameVersion.v1_0_020c;
                 case 79880192:
-                    version = GameVersion.v1_0_021;
-                    break;
+                    return GameVersion.v1_0_021;
                 case 79888384:
-                    version = GameVersion.v1_0_022;
-                    break;
+                    return GameVersion.v1_0_022;
                 case 79896576:
-                    version = GameVersion.v1_0_023;
-                    break;
+                    return GameVersion.v1_0_023;
+                case 81055744:
+                    return GameVersion.v1_1_001;
             }
+
+            return GameVersion.vNotFound;
         }
 
         // Stable pointers that should get set once and never change while game is running
-        // GameAssembly.dll pointers will change every patch
-        // UnityPlayer.dll pointers are stable across all versions, so static pointers should be fine long term
+        // GameAssembly.dll pointers will change every patch, but using AOBs should reduce patch related issues
+        // UnityPlayer.dll pointers are stable across all versions, so in theory should never need updating
         private bool LocatePointers()
         {
-            Debug.Print(aiLimit.BaseAddress[(int)Module.GameAssembly].ToString("x") + " " + " Seeking addresses...");
+            Debug.Print("Seeking addresses...");
 
-            using (AOBScanner scanner = new AOBScanner(aiLimit.ProcessHandle, aiLimit.BaseAddress[(int)Module.GameAssembly], "il2cpp"))
+            if (archiveDataBase == IntPtr.Zero
+                || viewManagerBase == IntPtr.Zero
+                || levelLoadManagerBase == IntPtr.Zero
+                || playerBase == IntPtr.Zero)
             {
-                archiveDataBase = scanner.FindAddress("48 8B 0d ?? ?? ?? ?? 83 B9 E0 00 00 00 00 75 ?? E8 99 0B");
-                archiveDataBase = aiLimit.ResolveOffsetPointer(archiveDataBase + 3);
+                using (AOBScanner scanner = new AOBScanner(aiLimit.ProcessHandle, aiLimit.BaseAddress[(int)Module.GameAssembly], "il2cpp"))
+                {
+                    archiveDataBase = scanner.FindAddress("48 8b 05 ?? ?? ?? ?? 48 8b 80 ?? ?? ?? ?? 48 8b 57 20 48 8b 08");
+                    playerBase = scanner.FindAddress("48 8b 0d ?? ?? ?? ?? 0f 95 c3");
+                    viewManagerBase = scanner.FindAddress("48 8B 0D ?? ?? ?? ?? 8B F8 48 8B 41 20");
+                    levelLoadManagerBase = scanner.FindAddress("33 D2 E8 ?? ?? ?? ?? 66 66 66 0F 1F 84 00 00 00 00 00 48 8B 0D");
 
-                viewManagerBase = scanner.FindAddress("48 8B 0D ?? ?? ?? ?? 8B F8 48 8B 41 20");
-                viewManagerBase = aiLimit.ResolveOffsetPointer(viewManagerBase + 3);
+                    infiniteConsumablesCodeAddress = scanner.FindAddress("89 41 14 48 8B 4C 24 30");
+                    if (infiniteConsumablesCodeAddress == IntPtr.Zero)
+                        infiniteConsumablesCodeAddress = scanner.FindAddress("48 8B 4C 24 30 48 85 C9 0F 84 8B") - 3;
 
-
-                levelLoadManagerBase = scanner.FindAddress("33 D2 E8 ?? ?? ?? ?? 66 66 66 0F 1F 84 00 00 00 00 00 48 8B 0D");
-                levelLoadManagerBase = aiLimit.ResolveOffsetPointer(levelLoadManagerBase + 21);
-
-                playerBase = scanner.FindAddress("48 8b 0d ?? ?? ?? ?? 0f 95 c3");
-                playerBase = aiLimit.ResolveOffsetPointer(playerBase + 3);
-
-                infiniteConsumablesCodeAddress = scanner.FindAddress("89 41 14 48 8B 4C 24 30");
-                if (infiniteConsumablesCodeAddress == IntPtr.Zero)
-                    infiniteConsumablesCodeAddress = scanner.FindAddress("48 8B 4C 24 30 48 85 C9 0F 84 8B") - 3;
-
-                passiveEnemiesCodeAddress = scanner.FindAddress("48 89 BB 30 01 00 00 48 8B D7 E8 4E");
-                if (passiveEnemiesCodeAddress == IntPtr.Zero)
-                    passiveEnemiesCodeAddress = scanner.FindAddress("48 8B D7 E8 4E 83 1A FE") - 7;
+                    passiveEnemiesCodeAddress = scanner.FindAddress("48 89 BB 30 01 00 00 48 8B D7 E8 4E");
+                    if (passiveEnemiesCodeAddress == IntPtr.Zero)
+                        passiveEnemiesCodeAddress = scanner.FindAddress("48 8B D7 E8 4E 83 1A FE") - 7;
+                }
             }
 
-            if (archiveDataBase > 0x100000
-                && viewManagerBase > 0x100000
-                && levelLoadManagerBase > 0x100000
-                && playerBase > 0x100000 )
+            if (archiveDataBase != IntPtr.Zero && archiveDataAddress < 0xFF)
             {
-                // UnityPlayer.dll addresses are unchanged across different patches.
-                timerAddress = aiLimit.ResolvePointerChain(aiLimit.BaseAddress[(int)Module.UnityPlayer] + 0x01CA3978) + 0x60;
-                xPosCodeAddress = aiLimit.BaseAddress[(int)Module.UnityPlayer] + 0x0140227C;
-                zPosCodeAddress = aiLimit.BaseAddress[(int)Module.UnityPlayer] + 0x01402288;
+                IntPtr ptr = aiLimit.ResolveOffsetPointer(archiveDataBase + 3) + 0xB8;
+                archiveDataAddress = aiLimit.ResolvePointerChain(ptr, 0x0) + 0x18;
+            }
 
+            if (playerBase != IntPtr.Zero && playerAddress < 0xFF)
+            {
+                IntPtr ptr = aiLimit.ResolveOffsetPointer(playerBase + 3) + 0x20;
+                playerAddress = aiLimit.ResolvePointerChain(ptr, 0xB8, 0x0) + 0x48;
+            }
+
+            if (viewManagerBase != IntPtr.Zero && currentViewAddress < 0xFF)
+            {
+                IntPtr ptr = aiLimit.ResolveOffsetPointer(viewManagerBase + 3) + 0x20;
+                currentViewAddress = aiLimit.ResolvePointerChain(ptr, 0xB8, 0x0) + 0x50;
+            }
+
+            if (levelLoadManagerBase != IntPtr.Zero && levelRootAddress < 0xFF)
+            {
+                IntPtr ptr = aiLimit.ResolveOffsetPointer(levelLoadManagerBase + 21) + 0xB8;
+                levelRootAddress = aiLimit.ResolvePointerChain(ptr, 0x0) + 0x38;
+            }
+
+            // UnityPlayer.dll addresses are unchanged across different patches.
+            timerAddress = aiLimit.ResolvePointerChain(aiLimit.BaseAddress[(int)Module.UnityPlayer] + 0x01CA3978) + 0x60;
+            xPosCodeAddress = aiLimit.BaseAddress[(int)Module.UnityPlayer] + 0x0140227C;
+            zPosCodeAddress = aiLimit.BaseAddress[(int)Module.UnityPlayer] + 0x01402288;
+
+            if (AddressInRange(archiveDataAddress) && AddressInRange(playerAddress) && AddressInRange(currentViewAddress) && AddressInRange(levelRootAddress))
                 return true;
-            }
+
             return false;
         }
 
@@ -300,15 +343,23 @@ namespace AILimitTool
                 case AddressType.UnityPlayer:
                     return aiLimit.BaseAddress[(int)Module.UnityPlayer];
                 case AddressType.ArchiveData:
-                    return aiLimit.ResolvePointerChain(archiveDataBase + 0xB8, 0x0, 0x18);
+                    return (IntPtr)aiLimit.ReadUInt64(archiveDataAddress);
                 case AddressType.Player:
-                    return aiLimit.ResolvePointerChain(playerBase + 0x20, 0xB8, 0x0, 0x48);
+                    return (IntPtr)aiLimit.ReadUInt64(playerAddress);
                 case AddressType.CurrentView:
-                    return aiLimit.ResolvePointerChain(viewManagerBase + 0x20, 0xB8, 0x0, 0x50);
+                    return (IntPtr)aiLimit.ReadUInt64(currentViewAddress);
                 case AddressType.LevelRoot:
-                    return aiLimit.ResolvePointerChain(levelLoadManagerBase + 0xB8, 0x0, 0x38);
+                    return (IntPtr)aiLimit.ReadUInt64(levelRootAddress);
                 case AddressType.Timer:
                     return timerAddress;
+                case AddressType.ArchiveDataRaw:
+                    return archiveDataAddress;
+                case AddressType.PlayerRaw:
+                    return playerAddress;
+                case AddressType.CurrentViewRaw:
+                    return currentViewAddress;
+                case AddressType.LevelRootRaw:
+                    return levelRootAddress;
             }
             return 0;
         }
@@ -417,9 +468,7 @@ namespace AILimitTool
             Crystals,
             TransferDestination,
         }
-
-        // if add == true, newValue should be added to existing value, instead of replacing it
-        // if newValue is default -1, check current value and return it
+        
         private IntPtr GetPlayerStatAddress(PlayerStats stat)
         {
             IntPtr address = GetAddress(AddressType.ArchiveData);
@@ -457,6 +506,7 @@ namespace AILimitTool
             return aiLimit.ReadUInt32(address);
         }
 
+        // if add == true, newValue should be added to existing value, instead of replacing it
         public void SetPlayerStat(PlayerStats stat, uint newValue, bool add = false)
         {
             IntPtr address = GetPlayerStatAddress(stat);
@@ -931,7 +981,6 @@ namespace AILimitTool
                     value = 7;
                 SetState(entry.state, entry.stateType, value, entry.level);
             }
-
         }
 
         //
@@ -987,5 +1036,22 @@ namespace AILimitTool
         LevelRoot,
         TransferDestination,
         Timer,
+
+        // Used for error screen
+        ArchiveDataRaw,
+        PlayerRaw,
+        CurrentViewRaw,
+        LevelRootRaw,
+    }
+    public enum GameVersion
+    {
+        v1_0_020a, // three versions from release day
+        v1_0_020b, // I don't know the actual versions, so assuming 1.0.020 
+        v1_0_020c, // and added letters to separate different versions
+        v1_0_021,
+        v1_0_022,
+        v1_0_023,
+        v1_1_001,
+        vNotFound = 100,
     }
 }

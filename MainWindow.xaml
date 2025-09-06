@@ -79,6 +79,7 @@
                             <TextBlock x:Name="textPassiveEnemies_Hotkey" Foreground="Gray"/>
                         </StackPanel>
                     </CheckBox>
+                    <CheckBox x:Name="checkboxHotkeysEnabled" Content="Hotkeys enabled" HorizontalAlignment="Left" Margin="10,349,0,0" VerticalAlignment="Top"  Checked="HotkeysEnabled_Toggle" Unchecked="HotkeysEnabled_Toggle" IsChecked="True"/>
                     <!--
                     <CheckBox x:Name="checkboxOneShotEnemies" HorizontalAlignment="Left" Margin="10,302,0,0" VerticalAlignment="Top" Checked="OneShotEnemies_Toggle" Unchecked="OneShotEnemies_Toggle">
                         <StackPanel Orientation="Horizontal">
@@ -98,11 +99,11 @@
                     <TextBlock HorizontalAlignment="Left" Margin="10,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Level"/></TextBlock>
                     <TextBox x:Name="textboxPlayerLevel" HorizontalAlignment="Left" Margin="91,12,0,0" TextWrapping="Wrap" Text="1" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric"/>
                     <TextBlock HorizontalAlignment="Left" Margin="10,134,0,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="en-au" Text="Spirit"/></TextBlock>
-                    <TextBox x:Name="textboxLife" HorizontalAlignment="Left" Margin="90,50,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange"/>
-                    <TextBox x:Name="textboxVitality" HorizontalAlignment="Left" Margin="90,71,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange"/>
-                    <TextBox x:Name="textboxStrength" HorizontalAlignment="Left" Margin="90,91,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange"/>
-                    <TextBox x:Name="textboxTechnique" HorizontalAlignment="Left" Margin="90,113,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange"/>
-                    <TextBox x:Name="textboxSpirit" HorizontalAlignment="Left" Margin="90,134,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange"/>
+                    <TextBox x:Name="textboxLife" HorizontalAlignment="Left" Margin="90,50,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange" MaxLength="2"/>
+                    <TextBox x:Name="textboxVitality" HorizontalAlignment="Left" Margin="90,71,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange" MaxLength="2"/>
+                    <TextBox x:Name="textboxStrength" HorizontalAlignment="Left" Margin="90,91,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange" MaxLength="2"/>
+                    <TextBox x:Name="textboxTechnique" HorizontalAlignment="Left" Margin="90,113,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange" MaxLength="2"/>
+                    <TextBox x:Name="textboxSpirit" HorizontalAlignment="Left" Margin="90,134,0,0" TextWrapping="Wrap" Text="10" VerticalAlignment="Top" Width="40" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" KeyUp="CalculatePlayerLevel" LostFocus="TextBox_VerifyStatRange" MaxLength="2"/>
                     <Button x:Name="buttonSetStats" Content="Set Stats" HorizontalAlignment="Left" Margin="165,11,0,0" VerticalAlignment="Top" Width="120" Click="SetPlayerStats"/>
                     <CheckBox x:Name="checkboxCalculatePlayerLevel" Content="Calculate correct level" HorizontalAlignment="Left" Margin="10,31,0,0" VerticalAlignment="Top" IsChecked="True"/>
                     <TextBox x:Name="textboxCrystals" HorizontalAlignment="Left" Margin="11,157,0,0" TextWrapping="Wrap" Text="0" VerticalAlignment="Top" Width="120" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric"/>
