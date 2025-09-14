@@ -158,6 +158,7 @@ public partial class MainWindow : Window, IDisposable
                                 + "Player: " + GetAddressStateText(AddressType.PlayerRaw) + "\n"
                                 + "LoadingView: " + GetAddressStateText(AddressType.CurrentViewRaw) + "\n"
                                 + "LevelRoot: " + GetAddressStateText(AddressType.LevelRootRaw) + "\n"
+                                + "Transfer Destination: " + GetAddressStateText(AddressType.TransferDestinationRaw) + "\n"
                                 + "Timer: " + GetAddressStateText(AddressType.Timer);
         }
 
@@ -1229,14 +1230,16 @@ public partial class MainWindow : Window, IDisposable
 
     private void SetWarpPoint(object sender, RoutedEventArgs e)
     {
-        KeyValuePair<string, uint> selectedDestination = (KeyValuePair<string, uint>)comboDestinations.SelectedItem;
-        AILimit.SetPlayerStat(PlayerStats.TransferDestination, selectedDestination.Value);
-        UpdateStatusBar("Broken branch destination set to " + selectedDestination.Value);
-    }
-
-    private void textboxLockTargetHP_Copy_TextChanged(object sender, TextChangedEventArgs e)
-    {
-
+        try
+        {
+            KeyValuePair<string, uint> selectedDestination = (KeyValuePair<string, uint>)comboDestinations.SelectedItem;
+            AILimit.SetPlayerStat(PlayerStats.TransferDestination, selectedDestination.Value);
+            UpdateStatusBar("Broken branch destination set to " + selectedDestination.Value);
+        }
+        catch (Exception f)
+        {
+            Debug.Print("Broken branch problem - " + f.ToString());
+        }
     }
 
     List<TeleportDestination> teleportDestinations = new List<TeleportDestination>();

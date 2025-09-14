@@ -3,6 +3,7 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows.Data;
 
 namespace AILimitTool
 {
@@ -154,11 +155,13 @@ namespace AILimitTool
                 viewManagerBase = IntPtr.Zero;
                 levelLoadManagerBase = IntPtr.Zero;
                 playerBase = IntPtr.Zero;
+                transferDestinationBase = IntPtr.Zero;
 
                 archiveDataAddress = IntPtr.Zero;
                 playerAddress = IntPtr.Zero;
                 currentViewAddress = IntPtr.Zero;
                 levelRootAddress = IntPtr.Zero;
+                transferDestination = IntPtr.Zero;
 
                 timerAddress = IntPtr.Zero;
                 xPosCodeAddress = IntPtr.Zero;
@@ -229,12 +232,14 @@ namespace AILimitTool
         IntPtr viewManagerBase = IntPtr.Zero;
         IntPtr levelLoadManagerBase = IntPtr.Zero;
         IntPtr playerBase = IntPtr.Zero;
+        IntPtr transferDestinationBase = IntPtr.Zero;
 
         // Final address storage
         IntPtr archiveDataAddress = IntPtr.Zero;
         IntPtr playerAddress = IntPtr.Zero;
         IntPtr currentViewAddress = IntPtr.Zero;
         IntPtr levelRootAddress = IntPtr.Zero;
+        IntPtr transferDestination = IntPtr.Zero;
 
         IntPtr timerAddress = IntPtr.Zero;
         IntPtr xPosCodeAddress = IntPtr.Zero;
@@ -288,6 +293,7 @@ namespace AILimitTool
                     playerBase = scanner.FindAddress("48 8b 0d ?? ?? ?? ?? 0f 95 c3");
                     viewManagerBase = scanner.FindAddress("48 8B 0D ?? ?? ?? ?? 8B F8 48 8B 41 20");
                     levelLoadManagerBase = scanner.FindAddress("33 D2 E8 ?? ?? ?? ?? 66 66 66 0F 1F 84 00 00 00 00 00 48 8B 0D");
+                    transferDestinationBase = scanner.FindAddress("48 8B 0D ?? ?? ?? ?? 45 33 FF 41 8B F7");
 
                     infiniteConsumablesCodeAddress = scanner.FindAddress("89 41 14 48 8B 4C 24 30");
                     if (infiniteConsumablesCodeAddress == IntPtr.Zero)
@@ -323,12 +329,15 @@ namespace AILimitTool
                 levelRootAddress = aiLimit.ResolvePointerChain(ptr, 0x0) + 0x38;
             }
 
+            if (transferDestinationBase != IntPtr.Zero && transferDestination < 0xFF)
+                transferDestination = transferDestinationBase + 7 + aiLimit.ReadInt32(transferDestinationBase + 3);
+
             // UnityPlayer.dll addresses are unchanged across different patches.
             timerAddress = aiLimit.ResolvePointerChain(aiLimit.BaseAddress[(int)Module.UnityPlayer] + 0x01CA3978) + 0x60;
             xPosCodeAddress = aiLimit.BaseAddress[(int)Module.UnityPlayer] + 0x0140227C;
             zPosCodeAddress = aiLimit.BaseAddress[(int)Module.UnityPlayer] + 0x01402288;
 
-            if (AddressInRange(archiveDataAddress) && AddressInRange(playerAddress) && AddressInRange(currentViewAddress) && AddressInRange(levelRootAddress))
+            if (AddressInRange(archiveDataAddress) && AddressInRange(playerAddress) && AddressInRange(currentViewAddress) && AddressInRange(levelRootAddress) && (transferDestination > 0xFF))
                 return true;
 
             return false;
@@ -350,6 +359,8 @@ namespace AILimitTool
                     return (IntPtr)aiLimit.ReadUInt64(currentViewAddress);
                 case AddressType.LevelRoot:
                     return (IntPtr)aiLimit.ReadUInt64(levelRootAddress);
+                case AddressType.TransferDestination:
+                    return aiLimit.ResolvePointerChain(transferDestination, 0xB8) + 0x1C;
                 case AddressType.Timer:
                     return timerAddress;
                 case AddressType.ArchiveDataRaw:
@@ -360,6 +371,8 @@ namespace AILimitTool
                     return currentViewAddress;
                 case AddressType.LevelRootRaw:
                     return levelRootAddress;
+                case AddressType.TransferDestinationRaw:
+                    return transferDestination;
             }
             return 0;
         }
@@ -518,6 +531,13 @@ namespace AILimitTool
                 aiLimit.WriteUInt32(address, aiLimit.ReadUInt32(address) + (uint)newValue);
             else
                 aiLimit.WriteUInt32(address, (uint)newValue);
+
+            // Transfer address needs to be written in two places, otherwise it's jank. Race condition?
+            if (stat == PlayerStats.TransferDestination)
+            {
+                address = GetAddress(AddressType.TransferDestination);
+                aiLimit.WriteUInt32(address, (uint)newValue);
+            }
         }
 
         enum ReturnTypes
@@ -1042,6 +1062,7 @@ namespace AILimitTool
         PlayerRaw,
         CurrentViewRaw,
         LevelRootRaw,
+        TransferDestinationRaw,
     }
     public enum GameVersion
     {

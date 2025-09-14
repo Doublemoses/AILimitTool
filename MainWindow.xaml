@@ -45,7 +45,7 @@
                             <TextBlock x:Name="textPlayerSpeed_Hotkey" Foreground="Gray"/>
                         </StackPanel>
                     </CheckBox>
-                    <TextBox x:Name="textboxMovementSpeed" HorizontalAlignment="Left" Margin="226,89,0,0" TextWrapping="Wrap" Text="50" VerticalAlignment="Top" Width="46" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric" TextChanged="textboxLockTargetHP_Copy_TextChanged"/>
+                    <TextBox x:Name="textboxMovementSpeed" HorizontalAlignment="Left" Margin="226,89,0,0" TextWrapping="Wrap" Text="50" VerticalAlignment="Top" Width="46" TextAlignment="Right" PreviewTextInput="TextBox_VerifyNumeric"/>
 
                     <CheckBox x:Name="checkboxFreeUpgrades" HorizontalAlignment="Left" Margin="10,110,0,0" VerticalAlignment="Top" Checked="FreeWeaponUpgrades_Toggle" Unchecked="FreeWeaponUpgrades_Toggle">
                         <StackPanel Orientation="Horizontal">
